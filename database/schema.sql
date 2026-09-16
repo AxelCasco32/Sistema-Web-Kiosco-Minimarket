@@ -1,0 +1,1 @@
+-- Esquema de base de datos - Sistema Web Kiosco (POS)
