@@ -13,23 +13,25 @@ Cómo está el repo
 Las carpetas ya están armadas siguiendo una arquitectura por capas (ver abajo). Los archivos .js/.jsx de src/ están vacíos, solo tienen un comentario arriba explicando qué va en cada uno. Eso lo programamos nosotros, repartiendo los archivos según las historias de usuario del backlog.
 
 Estructura
+```
 kiosco-web/
 ├── backend/
 │   ├── src/
 │   │   ├── config/db.js
-│   │   ├── models/        (Usuario, Producto, Cliente, TurnoCaja, Venta, DetalleVenta, index)
-│   │   ├── controllers/   (usuarios, productos, clientes, turnos, ventas)
-│   │   ├── routes/        (usuarios, productos, clientes, turnos, ventas)
-│   │   ├── middlewares/   (auth, errorHandler)
-│   │   └── utils/         (calcularVuelto, formatearFecha)
+│   │   ├── models/          (Usuario, Producto, Cliente, TurnoCaja, Venta, DetalleVenta, index)
+│   │   ├── controllers/     (usuarios, productos, clientes, turnos, ventas)
+│   │   ├── routes/          (usuarios, productos, clientes, turnos, ventas)
+│   │   ├── middlewares/     (auth, errorHandler)
+│   │   └── utils/           (calcularVuelto, formatearFecha)
 │   ├── .env.example
 │   ├── package.json
 │   └── server.js
+│
 ├── frontend/
 │   ├── src/
 │   │   ├── assets/
-│   │   ├── components/    (BotonDenominacion, CarritoItem, BuscarClienteModal)
-│   │   ├── pages/         (Login, Pos, AdminDashboard, CierreCaja)
+│   │   ├── components/      (BotonDenominacion, CarritoItem, BuscarClienteModal)
+│   │   ├── pages/            (Login, Pos, AdminDashboard, CierreCaja)
 │   │   ├── services/api.js
 │   │   ├── hooks/useAuth.js
 │   │   ├── context/AuthContext.jsx
@@ -38,11 +40,15 @@ kiosco-web/
 │   ├── index.html
 │   ├── package.json
 │   └── vite.config.js
+│
 ├── database/
 │   └── schema.sql
+│
 └── docs/
     ├── backlog_kiosco.xlsx
     └── kiosco_erd_corregido.png
+```
+
 Instalar las herramientas (Windows / PowerShell)
 
 Si no tenés nada instalado, corré esto en PowerShell (abrirla como administrador). Usa winget, que ya viene con Windows 10/11.
