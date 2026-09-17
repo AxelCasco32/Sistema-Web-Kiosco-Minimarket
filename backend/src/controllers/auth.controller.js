@@ -1,11 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Usuario, Rol } = require('../models');
-const { JWT_SECRET } = process.env;
-
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { Usuario, Rol } = require('../models');
 
 async function login(req, res) {
   try {
