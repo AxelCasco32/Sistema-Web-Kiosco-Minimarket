@@ -5,3 +5,7 @@
 // (efectivo/tarjeta/QR) usando components/BotonDenominacion y calcular vuelto,
 // y permitir buscar/cargar cliente (components/BuscarClienteModal) si piden factura.
 // Es la pantalla que más importa optimizar en velocidad (HU1.1, HU1.2).
+
+export default function Pos() {
+  return <></>;
+}
