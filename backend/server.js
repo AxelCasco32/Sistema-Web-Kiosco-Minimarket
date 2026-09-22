@@ -38,6 +38,7 @@ sequelize
       console.log(`Servidor corriendo en http://localhost:${PORT}`);
     });
   })
-  .catch((err) => {
-    console.error('No se pudo conectar a la base de datos:', err.message);
-  });
+.catch((err) => {
+    console.error('No se pudo conectar a la base de datos:');
+    console.error(err);
+});
