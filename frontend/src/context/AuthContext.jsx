@@ -4,16 +4,16 @@
 // exponer funciones de login/logout, y persistir el token para que no se
 // pierda la sesión al refrescar la página.
 
+// pages/Login.jsx
+// context/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from "react";
 
-// https://react.dev/reference/react/createContext
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [token, setToken] = useState(null);
 
-  // https://react.dev/reference/react/useEffect
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUsuario = localStorage.getItem("usuario");
@@ -27,7 +27,6 @@ export function AuthProvider({ children }) {
   const login = ({ token, usuario }) => {
     setToken(token);
     setUsuario(usuario);
-
     localStorage.setItem("token", token);
     localStorage.setItem("usuario", JSON.stringify(usuario));
   };
@@ -35,28 +34,17 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setToken(null);
     setUsuario(null);
-
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
   };
 
   const autenticado = !!token;
 
-  const valor = {
-    usuario,
-    token,
-    autenticado,
-    login,
-    logout,
-  };
+  const valor = { usuario, token, autenticado, login, logout };
 
-  // https://react.dev/reference/react/createContext#Provider
-  return (
-    <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   return useContext(AuthContext);
 }
-
