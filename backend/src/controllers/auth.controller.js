@@ -44,8 +44,9 @@ async function login(req, res) {
       },
     });
   } catch (error) {
+    console.error('ERROR LOGIN:', error); // <-- agregar esta línea
     res.status(500).json({ mensaje: 'Error al iniciar sesión', error: error.message });
-  }
+  } 
 }
 
 module.exports = { login };
