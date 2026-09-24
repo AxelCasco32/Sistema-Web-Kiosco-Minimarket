@@ -1,9 +1,4 @@
 // pages/AdminDashboard.jsx
-// Panel del Administrador.
-// Responsabilidad: gestión de productos (alta/edición de precios, incluyendo
-// precio_costo), gestión de usuarios/cajeros, y visualización de reportes
-// (ventas por turno, cierres de caja, faltantes). Accesible también desde
-// celular (diseño responsive).
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
@@ -19,7 +14,7 @@ export default function AdminDashboard() {
     try {
       const [resUsuarios, resRoles] = await Promise.all([
         api.get("/usuarios"),
-        api.get("/roles"),
+        api.get("/usuarios/roles"), // ✅ Cambiado de "/roles" a "/usuarios/roles"
       ]);
       setUsuarios(resUsuarios.data);
       setRoles(resRoles.data);
@@ -40,7 +35,17 @@ export default function AdminDashboard() {
     event.preventDefault();
     setMensaje("");
     try {
-      await api.post("/usuarios", form);
+      // Ojo: En tu backend req.body espera "Nombre" y "Apellido" en mayúscula, 
+      // pero en tu estado local están en minúscula ("nombre", "apellido").
+      // Enviamos el objeto mapeado correctamente según lo que espera el controlador:
+      await api.post("/usuarios", {
+        Nombre: form.nombre,
+        Apellido: form.apellido,
+        Usuario: form.usuario,
+        password: form.password,
+        id_Rol: form.id_Rol,
+      });
+
       setMensaje("Usuario creado correctamente");
       setForm({ nombre: "", apellido: "", usuario: "", password: "", id_Rol: "" });
       cargarDatos();

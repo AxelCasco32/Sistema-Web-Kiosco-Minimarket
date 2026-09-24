@@ -1,7 +1,21 @@
-// routes/usuarios.routes.js
-// Define los endpoints HTTP del recurso Usuarios y los conecta con su controller.
-// Ejemplo de endpoints esperados:
-//   POST /api/usuarios/login
-//   GET  /api/usuarios        (solo Admin)
-//   POST /api/usuarios        (solo Admin)
-// Debe aplicar los middlewares de autenticación/rol correspondientes a cada ruta.
+const express = require('express');
+const router = express.Router();
+const { verificarToken, soloAdmin } = require('../middlewares/auth');
+const {
+  listarUsuarios,
+  listarRoles,
+  crearUsuario,
+  actualizarUsuario,
+  cambiarEstadoUsuario,
+} = require('../controllers/usuarios.controller');
+
+// Todas las rutas de este archivo requieren estar logueado Y ser Admin
+router.use(verificarToken, soloAdmin);
+
+router.get('/roles', listarRoles);
+router.get('/', listarUsuarios);
+router.post('/', crearUsuario);
+router.put('/:id', actualizarUsuario);
+router.patch('/:id/estado', cambiarEstadoUsuario);
+
+module.exports = router;
