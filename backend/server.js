@@ -14,7 +14,8 @@ const { sequelize } = require('./src/models');
 
 const authRoutes = require('./src/routes/auth.routes');
 const usuariosRoutes = require('./src/routes/usuarios.routes');
-// const productosRoutes = require('./src/routes/productos.routes');
+const productosRoutes = require('./src/routes/productos.routes');
+
 
 const app = express();
 
@@ -28,7 +29,7 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', usuariosRoutes);
-// app.use('/api/productos', productosRoutes);
+app.use('/api/productos', productosRoutes);
 
 const PORT = process.env.PORT || 4000;
 
