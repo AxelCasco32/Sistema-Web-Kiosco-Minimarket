@@ -32,14 +32,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      <Route
-        path="/pos"
-        element={
-          <RutaProtegida>
-            <Pos />
-          </RutaProtegida>
-        }
-      />
+      <Route path="/pos" element={<Pos />} />
       <Route
         path="/admin"
         element={
