@@ -10,7 +10,7 @@ const {
 } = require('../controllers/usuarios.controller');
 
 // Todas las rutas de este archivo requieren estar logueado Y ser Admin
-router.use(verificarToken, soloAdmin);
+//router.use(verificarToken, soloAdmin);
 
 router.get('/roles', listarRoles);
 router.get('/', listarUsuarios);

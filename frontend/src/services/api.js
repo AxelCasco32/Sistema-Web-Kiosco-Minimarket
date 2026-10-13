@@ -18,3 +18,8 @@ api.interceptors.request.use((config) => {
 });
 
 export default api;
+
+// Función para obtener todos los productos del backend
+export const obtenerProductos = async () => {
+  return await api.get('/productos'); 
+};

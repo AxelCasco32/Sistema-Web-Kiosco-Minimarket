@@ -13,6 +13,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [token, setToken] = useState(null);
+  const [cargando, setCargando] = useState(true); // Clave para que no parpadee la pantalla
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
@@ -22,29 +23,31 @@ export function AuthProvider({ children }) {
       setToken(storedToken);
       setUsuario(JSON.parse(storedUsuario));
     }
+    setCargando(false); // Ya terminó de leer el disco
   }, []);
 
-  const login = ({ token, usuario }) => {
-    setToken(token);
-    setUsuario(usuario);
-    localStorage.setItem("token", token);
-    localStorage.setItem("usuario", JSON.stringify(usuario));
+  const login = (userData, userToken) => {
+    localStorage.setItem("token", userToken);
+    localStorage.setItem("usuario", JSON.stringify(userData));
+    setToken(userToken);
+    setUsuario(userData);
   };
 
   const logout = () => {
-    setToken(null);
-    setUsuario(null);
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
+    setToken(null);
+    setUsuario(null);
   };
 
-  const autenticado = !!token;
-
-  const valor = { usuario, token, autenticado, login, logout };
-
-  return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ usuario, token, login, logout, cargando }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-export function useAuth() {
+// Exportamos el hook acá mismo para no usar el archivo vacío de Lautaro
+export const useAuth = () => {
   return useContext(AuthContext);
-}
+};

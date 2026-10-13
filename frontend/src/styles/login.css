@@ -1,31 +1,140 @@
-.pagina {
+/* login.css */
+
+/* Fondo con degradado animado y moderno en tonos azules/violáceos */
+.pagina-login {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
+  background: radial-gradient(circle at top left, #1a1a3a 0%, #0f0f26 100%);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
 }
 
-.tarjeta-login {
-  width: 350px;
-  padding: 30px;
+/* Efecto de sutiles formas de fondo para que no quede liso */
+.pagina-login::before {
+  content: "";
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(25, 118, 210, 0.15) 0%, transparent 70%);
+  top: 15%;
+  left: 20%;
+  border-radius: 50%;
+  filter: blur(40px);
+}
 
+.pagina-login::after {
+  content: "";
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(121, 134, 203, 0.08) 0%, transparent 70%);
+  bottom: 10%;
+  right: 15%;
+  border-radius: 50%;
+  filter: blur(60px);
+}
+
+/* Tarjeta flotante con efecto cristalino suave */
+.tarjeta-login-moderna {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 420px;
+  padding: 40px 35px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 20px;
+  z-index: 10;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.tarjeta-login h1 {
-  text-align: center;
-  margin-bottom: 10px;
-  font-size: 26px;
+/* Inputs de login con íconos */
+.contenedor-input {
+  position: relative;
 }
 
-.tarjeta-login button {
+.contenedor-input svg {
+  position: absolute;
+  left: 12px;
+  top: 13px;
+  color: #95a5a6;
+  transition: color 0.3s ease;
+}
+
+.input-login {
   width: 100%;
+  padding: 12px 12px 12px 40px !important;
+  border: 1.5px solid #dcdcdc;
+  border-radius: 8px;
+  font-size: 1em;
+  transition: all 0.3s ease;
+  background-color: #fafafa;
 }
 
-.mensaje-error { 
-    color: #d32f2f;
-    font-weight: bold;
-    text-align: center;
+.input-login:focus {
+  border-color: #400093 !important;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.15) !important;
+  outline: none;
+}
+
+.contenedor-input:focus-within svg {
+  color: #400093;
+}
+
+/* Botón de ingreso con elevación y hover */
+.btn-ingresar {
+  width: 100%;
+  padding: 14px;
+  font-size: 1.05em;
+  font-weight: bold;
+  background-color: #400093;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 6px rgba(25, 118, 210, 0.2);
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-ingresar:hover:not(:disabled) {
+  background-color: #1565c0;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(25, 118, 210, 0.35);
+}
+
+.btn-ingresar:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-ingresar:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Botón "¿Olvidaste tu contraseña?" */
+.btn-olvido {
+  background: none;
+  border: none;
+  color: #1976d2;
+  font-size: 0.9em;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: center;
+  transition: color 0.2s, text-decoration 0.2s;
+  padding: 5px;
+}
+
+.btn-olvido:hover {
+  color: #1565c0;
+  text-decoration: underline;
 }

@@ -63,3 +63,118 @@ select {
   background-color: #dc2626;
   color: white;
 }
+
+/* EFECTOS INTERACTIVOS (HOVER Y FOCUS) */
+
+.btn-volver-interactivo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #555;
+  font-weight: bold;
+  padding: 8px 15px;
+  border-radius: 8px;
+  background-color: #f5f5f5;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-volver-interactivo:hover {
+  background-color: #e0e0e0;
+  color: #1976d2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.input-interactivo {
+  transition: all 0.3s ease;
+}
+
+.input-interactivo:focus {
+  border-color: #1976d2 !important;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.2) !important;
+  outline: none;
+}
+
+.item-producto-interactivo {
+  transition: background-color 0.2s ease;
+}
+
+.item-producto-interactivo:hover {
+  background-color: #f0f7ff !important;
+}
+
+/* EFECTOS INTERACTIVOS PARA EL DASHBOARD */
+
+/* Botón de cerrar sesión */
+.btn-cerrar-sesion {
+  background-color: #e53935;
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-cerrar-sesion:hover {
+  background-color: #d32f2f;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn-cerrar-sesion:active {
+  transform: translateY(1px);
+}
+
+/* Botones de Productos (Registrar y Editar) */
+.btn-gestion-interactivo {
+  text-decoration: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  transition: all 0.2s ease;
+}
+
+.btn-gestion-interactivo:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  filter: brightness(1.05);
+}
+
+.btn-gestion-interactivo:active {
+  transform: translateY(0);
+}
+
+/* Filas de Usuarios y Alertas de Stock */
+.fila-dashboard-interactiva {
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.fila-dashboard-interactiva:hover {
+  background-color: #f8f9fa;
+  transform: translateX(3px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+/* Específico para las alertas de stock cuando pasás el mouse */
+.alerta-stock-interactiva {
+  transition: all 0.2s ease;
+}
+
+.alerta-stock-interactiva:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  filter: contrast(1.02);
+}

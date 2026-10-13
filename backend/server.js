@@ -16,7 +16,7 @@ const authRoutes = require('./src/routes/auth.routes');
 const usuariosRoutes = require('./src/routes/usuarios.routes');
 const productosRoutes = require('./src/routes/productos.routes');
 
-
+const ventasRoutes = require('./src/routes/ventas.routes');
 const app = express();
 
 app.use(cors());
@@ -30,6 +30,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/productos', productosRoutes);
+app.use('/api/ventas', ventasRoutes);
 
 const PORT = process.env.PORT || 4000;
 
