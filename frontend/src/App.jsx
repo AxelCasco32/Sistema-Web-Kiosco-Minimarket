@@ -26,14 +26,28 @@ import CrearProducto from "./pages/CrearProducto";
 import EditarProducto from "./pages/EditarProducto";
 import RutaProtegida from "./components/RutaProtegida"; 
 import HistorialVentas from "./pages/HistorialVentas";
+import AperturaCaja from './components/AperturaCaja';
 
 function App() {
   return (
     <Routes>
-      {/* 1. Ruta Pública (No requiere sesión) */}
+      {/* Redirección automática de la raíz al login */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      
+      {/* 1. Ruta Pública */}
       <Route path="/login" element={<Login />} />
 
-      {/* 2. Ruta del Cajero (Acá también puede entrar el Admin si queremos que cobre) */}
+      {/* 2. Ruta de Apertura de Caja (¡Protegida!) */}
+      <Route 
+        path="/apertura-caja" 
+        element={
+          <RutaProtegida rolesPermitidos={['Cajero', 'Admin']}>
+            <AperturaCaja />
+          </RutaProtegida>
+        } 
+      />
+
+      {/* 3. Ruta del POS */}
       <Route 
         path="/pos" 
         element={
@@ -43,44 +57,14 @@ function App() {
         } 
       />
 
-      {/* 3. Rutas exclusivas del Administrador */}
-      <Route
-        path="/admin"
-        element={
-          <RutaProtegida rolesPermitidos={['Admin']}>
-            <AdminDashboard />
-          </RutaProtegida>
-        }
-      />
-      <Route
-        path="/crear-producto"
-        element={
-          <RutaProtegida rolesPermitidos={['Admin']}>
-            <CrearProducto />
-          </RutaProtegida>
-        }
-      />
-      <Route
-        path="/editar-producto"
-        element={
-          <RutaProtegida rolesPermitidos={['Admin']}>
-            <EditarProducto />
-          </RutaProtegida>
-        }
-      />
+      {/* 4. Rutas exclusivas del Administrador */}
+      <Route path="/admin" element={<RutaProtegida rolesPermitidos={['Admin']}><AdminDashboard /></RutaProtegida>} />
+      <Route path="/crear-producto" element={<RutaProtegida rolesPermitidos={['Admin']}><CrearProducto /></RutaProtegida>} />
+      <Route path="/editar-producto" element={<RutaProtegida rolesPermitidos={['Admin']}><EditarProducto /></RutaProtegida>} />
+      <Route path="/historial-ventas" element={<RutaProtegida rolesPermitidos={['Admin']}><HistorialVentas /></RutaProtegida>} />
 
-      {/* 4. Ruta Comodín: Si tipean cualquier fruta, los mandamos al login */}
+      {/* 5. Ruta Comodín: Si tipean cualquier fruta, los mandamos al login */}
       <Route path="*" element={<Navigate to="/login" replace />} />
-
-        <Route
-  path="/historial-ventas"
-  element={
-    <RutaProtegida rolesPermitidos={['Admin']}>
-      <HistorialVentas />
-    </RutaProtegida>
-  }
-/>
-
     </Routes>
   );
 }

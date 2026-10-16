@@ -32,7 +32,8 @@ export default function Login() {
 
       const rolDelUsuario = usuarioLogueado.Rol?.Nombre || usuarioLogueado.rol || usuarioLogueado.Rol;
 
-      navigate(rolDelUsuario === "Admin" ? "/admin" : "/pos", {
+      // EL CAMBIO CLAVE: Si es Admin va al panel, si es Cajero va a abrir la caja (no al POS directo)
+      navigate(rolDelUsuario === "Admin" ? "/admin" : "/apertura-caja", {
         replace: true,
       });
     } catch (err) {
@@ -46,29 +47,39 @@ export default function Login() {
     }
   }
 
-  // Función para manejar el "¿Olvidaste tu contraseña?"
   const manejarOlvidoContrasena = () => {
     alert("Para reestablecer tu contraseña, comunicate con el Administrador o soporte técnico del sistema.");
   };
 
   return (
-    <div className="pagina-login">
-      <form className="tarjeta-login-moderna" onSubmit={handleSubmit}>
+    <div className="pagina-login" style={{ backgroundColor: "#e6e4f4", backgroundImage: "radial-gradient(#c2bce0 1px, transparent 1px)", backgroundSize: "20px 20px" }}>
+      <form className="tarjeta-login-moderna" onSubmit={handleSubmit} style={{ boxShadow: "0 10px 30px rgba(38, 29, 96, 0.15)" }}>
         
-        {/* Encabezado con Ícono de Candado */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", marginBottom: "5px" }}>
-          <div style={{ backgroundColor: "rgba(25, 118, 210, 0.1)", padding: "12px", borderRadius: "50%", display: "flex", justifyContent: "center", alignItems: "center" }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1976d2" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        {/* ESPACIO RESERVADO PARA EL LOGO */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "15px" }}>
+          <div style={{ width: "70px", height: "70px", backgroundColor: "#f3e5f5", borderRadius: "16px", display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "10px", border: "2px dashed #261d60" }}>
+            {/* Cuando tengas el logo, borrás este SVG y ponés la etiqueta <img> */}
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#261d60" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </div>
+        </div>
+
+        {/* Encabezado con Ícono de Candado Morado */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+          <div style={{ backgroundColor: "rgba(38, 29, 96, 0.1)", padding: "12px", borderRadius: "50%", display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#261d60" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
           </div>
-          <h2 style={{ margin: 0, color: "#2c3e50", fontSize: "1.65em", fontWeight: "700" }}>Iniciar sesión</h2>
+          <h2 style={{ margin: 0, color: "#261d60", fontSize: "1.65em", fontWeight: "700" }}>Iniciar sesión</h2>
         </div>
 
         {/* Campo Usuario */}
         <div className="contenedor-input">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#261d60" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
             <circle cx="12" cy="7" r="4"></circle>
           </svg>
@@ -78,13 +89,14 @@ export default function Login() {
             placeholder="Usuario"
             value={usuario}
             onChange={(e) => setUsuario(e.target.value)}
+            style={{ borderFocus: "#261d60" }}
             required
           />
         </div>
 
         {/* Campo Contraseña */}
         <div className="contenedor-input">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#261d60" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
@@ -98,10 +110,15 @@ export default function Login() {
           />
         </div>
 
-        {error && <p className="mensaje-error" style={{ margin: 0, fontSize: "0.9em", textAlign: "center" }}> {error} </p>}
+        {error && <p className="mensaje-error" style={{ margin: 0, fontSize: "0.9em", textAlign: "center", color: "#c62828", backgroundColor: "#ffebee", padding: "8px", borderRadius: "6px" }}> {error} </p>}
         
         {/* Botón Ingresar */}
-        <button className="btn-ingresar" type="submit" disabled={cargando}>
+        <button 
+          className="btn-ingresar" 
+          type="submit" 
+          disabled={cargando}
+          style={{ backgroundColor: "#261d60", color: "white", transition: "background 0.3s" }}
+        >
           {cargando ? (
             "Ingresando..."
           ) : (
@@ -116,7 +133,7 @@ export default function Login() {
         </button>
 
         {/* Olvidaste tu contraseña */}
-        <button type="button" onClick={manejarOlvidoContrasena} className="btn-olvido">
+        <button type="button" onClick={manejarOlvidoContrasena} className="btn-olvido" style={{ color: "#261d60" }}>
           ¿Olvidaste tu contraseña?
         </button>
 

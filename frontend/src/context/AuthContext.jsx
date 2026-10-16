@@ -36,6 +36,7 @@ export function AuthProvider({ children }) {
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
+    localStorage.removeItem("id_turno");
     setToken(null);
     setUsuario(null);
   };

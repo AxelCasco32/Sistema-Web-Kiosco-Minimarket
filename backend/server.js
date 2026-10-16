@@ -17,6 +17,8 @@ const usuariosRoutes = require('./src/routes/usuarios.routes');
 const productosRoutes = require('./src/routes/productos.routes');
 
 const ventasRoutes = require('./src/routes/ventas.routes');
+
+const clientesRoutes = require('./src/routes/clientes.routes');
 const app = express();
 
 app.use(cors());
@@ -31,6 +33,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/productos', productosRoutes);
 app.use('/api/ventas', ventasRoutes);
+app.use('/api/clientes', clientesRoutes);
+app.use('/api/turnos', require('./src/routes/turnos.routes'));
 
 const PORT = process.env.PORT || 4000;
 

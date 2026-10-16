@@ -10,9 +10,14 @@
 const sequelize = require('../config/db');
 const Usuario = require('./Usuario');
 const Rol = require('./Rol');
-const Producto = require('./Producto'); 
-
+const Producto = require('./Producto');
+const Cliente = require('./Cliente'); 
+const Venta = require('./Venta');
+const DetalleVenta = require('./DetalleVenta');
+const TurnoCaja = require('./TurnoCaja');
+// 
 Usuario.belongsTo(Rol, { foreignKey: 'id_Rol' });
 Rol.hasMany(Usuario, { foreignKey: 'id_Rol' });
 
-module.exports = { sequelize, Usuario, Rol, Producto };
+// 
+module.exports = { sequelize, Usuario, Rol, Producto, Cliente, Venta, DetalleVenta, TurnoCaja }; 
