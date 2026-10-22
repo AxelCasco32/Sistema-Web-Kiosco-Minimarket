@@ -15,7 +15,17 @@ export default function Login() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (!usuario.trim() || !contrasena) return;
+
+    // Validación manual de campos vacíos
+    if (!usuario.trim()) {
+      setError("Por favor, ingresá tu usuario.");
+      return;
+    }
+
+    if (!contrasena) {
+      setError("Por favor, ingresá tu contraseña.");
+      return;
+    }
 
     setError("");
     setCargando(true);
@@ -32,10 +42,12 @@ export default function Login() {
 
       const rolDelUsuario = usuarioLogueado.Rol?.Nombre || usuarioLogueado.rol || usuarioLogueado.Rol;
 
-      // EL CAMBIO CLAVE: Si es Admin va al panel, si es Cajero va a abrir la caja (no al POS directo)
-      navigate(rolDelUsuario === "Admin" ? "/admin" : "/apertura-caja", {
-        replace: true,
-      });
+      if (rolDelUsuario === "Admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        const turnoActivo = localStorage.getItem("id_turno");
+        navigate(turnoActivo ? "/pos" : "/apertura-caja", { replace: true });
+      }
     } catch (err) {
       setError(
         err.response?.status === 401
@@ -53,12 +65,11 @@ export default function Login() {
 
   return (
     <div className="pagina-login" style={{ backgroundColor: "#e6e4f4", backgroundImage: "radial-gradient(#c2bce0 1px, transparent 1px)", backgroundSize: "20px 20px" }}>
-      <form className="tarjeta-login-moderna" onSubmit={handleSubmit} style={{ boxShadow: "0 10px 30px rgba(38, 29, 96, 0.15)" }}>
+      <form noValidate className="tarjeta-login-moderna" onSubmit={handleSubmit} style={{ boxShadow: "0 10px 30px rgba(38, 29, 96, 0.15)" }}>
         
         {/* ESPACIO RESERVADO PARA EL LOGO */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "15px" }}>
           <div style={{ width: "70px", height: "70px", backgroundColor: "#f3e5f5", borderRadius: "16px", display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "10px", border: "2px dashed #261d60" }}>
-            {/* Cuando tengas el logo, borrás este SVG y ponés la etiqueta <img> */}
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#261d60" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
               <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -88,9 +99,11 @@ export default function Login() {
             type="text"
             placeholder="Usuario"
             value={usuario}
-            onChange={(e) => setUsuario(e.target.value)}
+            onChange={(e) => {
+              setUsuario(e.target.value);
+              if (error) setError("");
+            }}
             style={{ borderFocus: "#261d60" }}
-            required
           />
         </div>
 
@@ -105,8 +118,10 @@ export default function Login() {
             type="password"
             placeholder="Contraseña"
             value={contrasena}
-            onChange={(e) => setContrasena(e.target.value)}
-            required
+            onChange={(e) => {
+              setContrasena(e.target.value);
+              if (error) setError("");
+            }}
           />
         </div>
 

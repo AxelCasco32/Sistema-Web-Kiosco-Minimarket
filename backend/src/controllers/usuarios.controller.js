@@ -68,33 +68,44 @@ async function crearUsuario(req, res) {
   }
 }
 
-// PUT /api/usuarios/:id - editar nombre/apellido/rol (no toca la password)
+// PUT /api/usuarios/:id - actualizar datos del usuario
 async function actualizarUsuario(req, res) {
   try {
     const { id } = req.params;
-    const { Nombre, Apellido, id_Rol } = req.body;
+    const { Nombre, Apellido, Usuario: username, password, id_Rol } = req.body;
 
     const usuario = await Usuario.findByPk(id);
-    if (!usuario) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
 
     if (Nombre) usuario.Nombre = Nombre;
     if (Apellido) usuario.Apellido = Apellido;
+    if (username) usuario.Usuario = username;
     if (id_Rol) usuario.id_Rol = id_Rol;
 
+    // Solo actualizamos la contraseña si mandaron una nueva
+    if (password && password.trim() !== '') {
+      if (password.length < 6) {
+        return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+      }
+      usuario.password_hash = await bcrypt.hash(password, 10);
+    }
+
     await usuario.save();
-    res.json({ mensaje: 'Usuario actualizado correctamente' });
+    res.status(200).json({ mensaje: 'Usuario actualizado correctamente' });
   } catch (error) {
     console.error('ERROR ACTUALIZAR USUARIO:', error);
-    res.status(500).json({ mensaje: 'Error al actualizar usuario', error: error.message });
+    res.status(500).json({ error: 'No se pudo actualizar el usuario' });
   }
 }
 
-// PATCH /api/usuarios/:id/estado - activar/desactivar (nunca hacer DELETE físico)
+// PATCH /api/usuarios/:id/estado - activar/desactivar (baja lógica)
 async function cambiarEstadoUsuario(req, res) {
   try {
     const { id } = req.params;
 
-    if (Number(id) === req.usuario.id_Usuario) {
+    if (Number(id) === req.usuario?.id_Usuario) {
       return res.status(400).json({ mensaje: 'No podés desactivar tu propio usuario' });
     }
 
@@ -111,4 +122,31 @@ async function cambiarEstadoUsuario(req, res) {
   }
 }
 
-module.exports = { listarUsuarios, listarRoles, crearUsuario, actualizarUsuario, cambiarEstadoUsuario };
+// DELETE /api/usuarios/:id - eliminar usuario físicamente
+async function eliminarUsuario(req, res) {
+  try {
+    const { id } = req.params;
+
+    const usuario = await Usuario.findByPk(id);
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    await usuario.destroy();
+    res.status(200).json({ mensaje: 'Usuario eliminado correctamente' });
+  } catch (error) {
+    console.error('ERROR ELIMINAR USUARIO:', error);
+    res.status(500).json({
+      error: 'No se puede eliminar el usuario porque tiene registros (turnos o ventas) asociados.',
+    });
+  }
+}
+
+module.exports = {
+  listarUsuarios,
+  listarRoles,
+  crearUsuario,
+  actualizarUsuario,
+  cambiarEstadoUsuario,
+  eliminarUsuario,
+};

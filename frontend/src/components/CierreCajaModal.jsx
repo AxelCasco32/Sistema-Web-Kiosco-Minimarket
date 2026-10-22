@@ -24,14 +24,18 @@ export default function CierreCajaModal({ idTurno, onClose, onCierreExitoso }) {
     cargarResumen();
   }, [idTurno]);
 
-  const confirmarCierre = async () => {
+ const confirmarCierre = async () => {
     setProcesando(true);
     try {
       await api.put(`/turnos/cerrar/${idTurno}`, {
         totalEfectivo: resumen.efectivo,
         totalTarjeta: resumen.tarjeta
       });
-      onCierreExitoso(); // Llama a la función que desloguea al usuario
+      
+      // Acá sí se destruye el turno porque la caja quedó cerrada
+      localStorage.removeItem("id_turno");
+      
+      onCierreExitoso();
     } catch (error) {
       console.error("Error al cerrar el turno", error);
       alert("Hubo un error al cerrar la caja.");

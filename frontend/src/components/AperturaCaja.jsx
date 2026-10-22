@@ -13,6 +13,13 @@ const AperturaCaja = () => {
   // Buscamos el ID del usuario según cómo venga de tu base de datos
   const idCajero = usuario?.id || usuario?.id_Usuario || usuario?.idUsuario;
 
+useEffect(() => {
+  const turnoActivo = localStorage.getItem("id_turno");
+  if (turnoActivo) {
+    navigate("/pos", { replace: true });
+  }
+}, [navigate]);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setHoraActual(new Date());

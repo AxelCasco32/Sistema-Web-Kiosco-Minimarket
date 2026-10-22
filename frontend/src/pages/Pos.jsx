@@ -8,11 +8,25 @@ import BuscarClienteModal from "../components/BuscarClienteModal";
 import { useNavigate } from "react-router-dom";
 import CierreCajaModal from "../components/CierreCajaModal";
 
+const CATEGORIAS_DISPONIBLES = [
+  "Todos",
+  "General",
+  "Bebidas",
+  "Alimentos",
+  "Golosinas",
+  "Limpieza",
+  "Cigarrillos"
+];
+
 export default function Pos() {
   const { logout, usuario } = useAuth();
   const [carrito, setCarrito] = useState([]);
   const [productos, setProductos] = useState([]);
   const [medioPago, setMedioPago] = useState("efectivo");
+  
+  // Estados para filtrado de productos
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("Todos");
+  const [busquedaTexto, setBusquedaTexto] = useState("");
   
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [mostrarModalCliente, setMostrarModalCliente] = useState(false);
@@ -22,9 +36,9 @@ export default function Pos() {
   
   const [cargando, setCargando] = useState(true);
   const [procesandoCobro, setProcesandoCobro] = useState(false);
-const [horaActual, setHoraActual] = useState(new Date());
+  const [horaActual, setHoraActual] = useState(new Date());
 
-const navigate = useNavigate();
+  const navigate = useNavigate();
 
   // CANDADO EXTRA: Si entra al POS pero no abrió la caja, lo pateamos a la apertura
   useEffect(() => {
@@ -34,13 +48,15 @@ const navigate = useNavigate();
     }
   }, [navigate]);
 
-const [mostrarCierre, setMostrarCierre] = useState(false);
+  const [mostrarCierre, setMostrarCierre] = useState(false);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setHoraActual(new Date());
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
   const cargarProductos = async () => {
     setCargando(true);
     try {
@@ -123,6 +139,19 @@ const [mostrarCierre, setMostrarCierre] = useState(false);
     );
   };
 
+  // Filtro reactivo por Categoría y Texto de búsqueda
+  const productosFiltrados = productos.filter((p) => {
+    const coincideCategoria = 
+      categoriaSeleccionada === "Todos" || 
+      (p.Categoria || "General").toLowerCase() === categoriaSeleccionada.toLowerCase();
+
+    const coincideTexto = 
+      p.Nombre.toLowerCase().includes(busquedaTexto.toLowerCase()) ||
+      (p.Cod_barra && p.Cod_barra.includes(busquedaTexto));
+
+    return coincideCategoria && coincideTexto;
+  });
+
   const subtotal = carrito.reduce((total, producto) => total + producto.Precio_Venta * producto.cantidad, 0);
   const iva = clienteSeleccionado?.Condicion === "responsable_inscripto" ? subtotal * 0.21 : 0;
   const total = subtotal + iva;
@@ -163,7 +192,6 @@ const [mostrarCierre, setMostrarCierre] = useState(false);
         precio_unitario: prod.Precio_Venta
       }));
 
-      // LEEMOS EL TURNO ACTIVO
       const idTurnoActual = localStorage.getItem("id_turno");
 
       const datosVenta = {
@@ -171,7 +199,7 @@ const [mostrarCierre, setMostrarCierre] = useState(false);
         metodo_pago: medioPago,
         tipo_cliente: clienteSeleccionado ? clienteSeleccionado.Condicion : "consumidor_final",
         id_cliente: clienteSeleccionado ? clienteSeleccionado.id : null,
-        id_turno: idTurnoActual, // LO AGREGAMOS AL ENVÍO
+        id_turno: idTurnoActual,
         comprobante: numeroComprobante,
         detalle: detalleVenta 
       };
@@ -208,10 +236,10 @@ const [mostrarCierre, setMostrarCierre] = useState(false);
             letterSpacing: '1px', 
             backgroundColor: 'rgba(0,0,0,0.2)', 
             padding: '6px 14px', 
-            borderRadius: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
+            borderRadius: '20px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px' 
           }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
@@ -223,23 +251,23 @@ const [mostrarCierre, setMostrarCierre] = useState(false);
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           
-          {/* BOTÓN CERRAR CAJA (Financiero - Separado y con color Ámbar/Naranja) */}
+          {/* BOTÓN CERRAR CAJA */}
           <button 
             onClick={() => setMostrarCierre(true)} 
             style={{ 
-              backgroundColor: "#f39c12", // Naranja llamativo, distinto al rojo de error
+              backgroundColor: "#f39c12", 
               color: "white", 
               padding: "8px 18px", 
               border: "none", 
               borderRadius: "8px", 
               fontWeight: "bold", 
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              fontSize: "0.95em",
-              boxShadow: "0 2px 8px rgba(243, 156, 18, 0.4)",
-              transition: "transform 0.2s"
+              cursor: "pointer", 
+              display: "flex", 
+              alignItems: "center", 
+              gap: "8px", 
+              fontSize: "0.95em", 
+              boxShadow: "0 2px 8px rgba(243, 156, 18, 0.4)", 
+              transition: "transform 0.2s" 
             }}
             onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.05)"}
             onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
@@ -258,10 +286,8 @@ const [mostrarCierre, setMostrarCierre] = useState(false);
               <strong>{usuario?.nombre || 'Juan'}</strong>
             </span>
             
-            {/* Pequeña línea separadora */}
             <div style={{ width: '1px', height: '18px', backgroundColor: 'rgba(255,255,255,0.3)' }}></div>
 
-            {/* BOTÓN CERRAR SESIÓN (Sutil, transparente) */}
             <button 
               onClick={logout} 
               style={{ 
@@ -270,12 +296,12 @@ const [mostrarCierre, setMostrarCierre] = useState(false);
                 border: 'none', 
                 padding: '4px 4px', 
                 fontSize: '0.9em', 
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                opacity: 0.7,
-                transition: "opacity 0.2s"
+                cursor: 'pointer', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '6px', 
+                opacity: 0.7, 
+                transition: "opacity 0.2s" 
               }}
               onMouseOver={(e) => e.currentTarget.style.opacity = "1"}
               onMouseOut={(e) => e.currentTarget.style.opacity = "0.7"}
@@ -291,26 +317,97 @@ const [mostrarCierre, setMostrarCierre] = useState(false);
       
       <main className="caja-contenido" style={{ padding: "30px 20px" }}>
         
+        {/* SECCIÓN PRODUCTOS CON FILTRO POR CATEGORÍA */}
         <section className="card productos" style={{ padding: "25px", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.02)" }}>
-          <h2 style={{ marginTop: 0, marginBottom: "20px", paddingBottom: "10px", borderBottom: "2px solid #f0f0f0", color: "#2c3e50" }}>Productos</h2>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px", flexWrap: "wrap", gap: "10px" }}>
+            <h2 style={{ margin: 0, color: "#2c3e50" }}>Productos</h2>
+            
+            {/* Buscador secundario rápido por nombre en catálogo */}
+            <div style={{ position: "relative", minWidth: "220px" }}>
+              <input 
+                type="text" 
+                placeholder="Filtrar por nombre..." 
+                value={busquedaTexto}
+                onChange={(e) => setBusquedaTexto(e.target.value)}
+                style={{ 
+                  width: "100%", 
+                  padding: "8px 12px 8px 32px", 
+                  borderRadius: "20px", 
+                  border: "1px solid #dcdde1", 
+                  fontSize: "0.9em", 
+                  outline: "none",
+                  boxSizing: "border-box"
+                }}
+              />
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#95a5a6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: "10px", top: "10px" }}>
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </div>
+          </div>
+
+          {/* BARRA DE CATEGORÍAS (PILLS) */}
+          <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "12px", marginBottom: "15px", borderBottom: "2px solid #f0f0f0" }}>
+            {CATEGORIAS_DISPONIBLES.map((cat) => {
+              const estaActiva = categoriaSeleccionada.toLowerCase() === cat.toLowerCase();
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setCategoriaSeleccionada(cat)}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: "20px",
+                    border: estaActiva ? "1px solid #261d60" : "1px solid #e0e0e0",
+                    backgroundColor: estaActiva ? "#261d60" : "#ffffff",
+                    color: estaActiva ? "#ffffff" : "#555555",
+                    fontWeight: estaActiva ? "bold" : "normal",
+                    fontSize: "0.85em",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    transition: "all 0.2s ease"
+                  }}
+                  onMouseOver={(e) => {
+                    if (!estaActiva) e.currentTarget.style.backgroundColor = "#f0edfd";
+                  }}
+                  onMouseOut={(e) => {
+                    if (!estaActiva) e.currentTarget.style.backgroundColor = "#ffffff";
+                  }}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
           
-          <div className="productos-grid">
+          <div 
+              className="productos-grid"
+              style={{
+                maxHeight: "calc(200vh - 250px)", // Ocupa el alto justo de la pantalla
+                overflowY: "auto",                 // Activa el scroll vertical interno
+                paddingRight: "8px"                // Espacio para la barra de scroll
+              }}
+            >
             {cargando ? (
               <div style={{ padding: "20px", textAlign: "center", color: "#7f8c8d" }}>Actualizando stock de productos...</div>
-            ) : productos.length === 0 ? (
-              <p>No hay productos registrados en el sistema.</p>
+            ) : productosFiltrados.length === 0 ? (
+              <p style={{ color: "#7f8c8d", fontStyle: "italic" }}>No se encontraron productos en esta categoría.</p>
             ) : (
-              productos.map((producto) => (
+              productosFiltrados.map((producto) => (
                 <div 
                   className="producto-card item-producto-interactivo" 
                   key={producto.Cod_barra || producto.idProductos || producto.id}
                   style={{ borderRadius: "10px", border: "1px solid #ddd", padding: "15px", display: "flex", flexDirection: "column", justifyContent: "space-between", gap: "10px", opacity: producto.Stock < 1 ? 0.6 : 1 }}
                 >
                   <div>
-                    <h3 style={{ margin: "0 0 5px 0", fontSize: "1.1em", color: "#2c3e50" }}>{producto.Nombre}</h3>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "5px" }}>
+                      <h3 style={{ margin: "0 0 5px 0", fontSize: "1.05em", color: "#2c3e50" }}>{producto.Nombre}</h3>
+                      <span style={{ fontSize: "0.75em", color: "#8c827a", backgroundColor: "#f4f4f4", padding: "2px 6px", borderRadius: "4px" }}>
+                        {producto.Categoria || "General"}
+                      </span>
+                    </div>
                     <p className="precio" style={{ margin: 0, fontWeight: "bold", color: "#261d60" }}> ${Number(producto.Precio_Venta).toFixed(2)} </p>
                     
-                    <div style={{ margin: "3px 0 0 0", display: "flex", alignItems: "center", gap: "5px", color: producto.Stock <= 5 ? "#c62828" : "#7f8c8d", fontSize: "0.9em", fontWeight: producto.Stock <= 5 ? "bold" : "normal" }}>
+                    <div style={{ margin: "3px 0 0 0", display: "flex", alignItems: "center", gap: "5px", color: producto.Stock <= 5 ? "#c62828" : "#7f8c8d", fontSize: "0.85em", fontWeight: producto.Stock <= 5 ? "bold" : "normal" }}>
                       {producto.Stock < 1 ? (
                         <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> Agotado</>
                       ) : producto.Stock <= 5 ? (
@@ -334,6 +431,7 @@ const [mostrarCierre, setMostrarCierre] = useState(false);
           </div>
         </section>
 
+        {/* SECCIÓN VENTA ACTUAL */}
         <section className="card carrito" style={{ padding: "25px", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.02)" }}>
           <h2 style={{ marginTop: 0, marginBottom: "15px", color: "#2c3e50" }}>Venta actual</h2>
           
@@ -389,7 +487,7 @@ const [mostrarCierre, setMostrarCierre] = useState(false);
                       onMouseOut={(e) => e.currentTarget.style.color = "#95a5a6"}
                       title="Eliminar producto"
                     >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2-2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                     </button>
                   </div>
                 </div>
@@ -411,7 +509,7 @@ const [mostrarCierre, setMostrarCierre] = useState(false);
                 )}
               </div>
               <button 
-                onClick={() => setMostrarModalCliente(true)}
+                onClick={() => setMostrarModalCliente(true)} 
                 style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: "#e6e4f4", color: "#261d60", border: "1px solid #c2bce0", padding: "8px 12px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", fontSize: "0.9em" }}
               >
                 {clienteSeleccionado ? (
@@ -537,13 +635,14 @@ const [mostrarCierre, setMostrarCierre] = useState(false);
           </div>
         </section>
       </main>
-    {mostrarCierre && (
+
+      {mostrarCierre && (
         <CierreCajaModal 
           idTurno={localStorage.getItem("id_turno")}
           onClose={() => setMostrarCierre(false)}
           onCierreExitoso={() => {
             setMostrarCierre(false);
-            logout(); // Ejecuta el cierre de sesión y borra el id_turno
+            logout();
           }}
         />
       )}

@@ -15,6 +15,7 @@ const Producto = sequelize.define(
     Precio_Venta: { type: DataTypes.DECIMAL(12, 2), allowNull: false, defaultValue: 0.0 },
     Stock: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     Activo: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    Categoria: { type: DataTypes.STRING(50), allowNull: false, defaultValue: 'General'}
   },
   {
     tableName: 'productos',

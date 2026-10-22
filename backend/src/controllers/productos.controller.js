@@ -33,7 +33,7 @@ async function buscarPorCodigoBarra(req, res) {
 
 async function crearProducto(req, res) {
   try {
-    const { Cod_barra, Nombre, Precio_costo, Precio_Venta, Stock } = req.body;
+    const { Cod_barra, Nombre, Precio_costo, Precio_Venta, Stock, Categoria } = req.body;
 
     if (!Cod_barra || !Nombre) {
       return res.status(400).json({ mensaje: 'Código de barras y nombre son obligatorios' });
@@ -50,6 +50,7 @@ async function crearProducto(req, res) {
       Precio_costo: Precio_costo || 0,
       Precio_Venta: Precio_Venta || 0,
       Stock: Stock || 0,
+      Categoria: Categoria || 'General', // <-- Agregado con valor por defecto
     });
 
     res.status(201).json(nuevoProducto);
@@ -67,6 +68,7 @@ async function editarProducto(req, res) {
       return res.status(404).json({ mensaje: 'Producto no encontrado' });
     }
 
+    // Como usa req.body completo, toma Categoria automáticamente
     await producto.update(req.body);
     res.json(producto);
   } catch (error) {

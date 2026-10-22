@@ -16,6 +16,7 @@ export default function EditarProducto() {
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
   const [busqueda, setBusqueda] = useState("");
+  const [categoria, setCategoria] = useState("General");
 
   const cargarProductos = async () => {
     try {
@@ -41,6 +42,7 @@ export default function EditarProducto() {
       setStock(prod.Stock || 0);
       setMensaje("");
       setError("");
+      setCategoria(prod.Categoria || "General");
     }
   };
 
@@ -52,7 +54,7 @@ export default function EditarProducto() {
     try {
       const productoReal = productos.find(p => String(p.idProductos) === idSeleccionado || String(p.Cod_barra) === idSeleccionado);
       await api.put(`/productos/${productoReal.idProductos}`, {
-        Nombre: nombre, Cod_barra: codigo, Precio_Venta: Number(precio), Precio_costo: Number(costo), Stock: Number(stock)
+        Nombre: nombre, Cod_barra: codigo, Precio_Venta: Number(precio), Precio_costo: Number(costo), Stock: Number(stock), Categoria: categoria
       });
       setMensaje(`¡El producto se actualizó correctamente!`);
       cargarProductos(); 
@@ -171,6 +173,22 @@ export default function EditarProducto() {
             <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "15px" }}>
               <label style={{ fontWeight: "bold", color: "#2c3e50", fontSize: "0.95em" }}>Stock:</label>
               <input style={styles.inputOverride} type="number" min="0" value={stock} onChange={(e) => setStock(e.target.value)} required />
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontWeight: "bold", color: "#2c3e50", fontSize: "0.95em" }}>Categoría:</label>
+              <select 
+                style={styles.inputOverride} 
+                value={categoria} 
+                onChange={(e) => setCategoria(e.target.value)}
+              >
+                <option value="General">General</option>
+                <option value="Bebidas">Bebidas</option>
+                <option value="Alimentos">Alimentos</option>
+                <option value="Golosinas">Golosinas</option>
+                <option value="Limpieza">Limpieza</option>
+                <option value="Cigarrillos">Cigarrillos</option>
+              </select>
             </div>
 
             <button type="submit" style={styles.actionBtnSolid} onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.02)"} onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}>

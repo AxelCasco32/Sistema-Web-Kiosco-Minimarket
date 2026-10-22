@@ -11,6 +11,7 @@ export default function CrearProducto() {
   const [stock, setStock] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
+  const [categoria, setCategoria] = useState("General");
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -23,7 +24,8 @@ export default function CrearProducto() {
         Cod_barra: codigo,
         Precio_Venta: Number(precio),
         Precio_costo: Number(costo),
-        Stock: Number(stock)
+        Stock: Number(stock),
+        Categoria: categoria
       });
 
       setMensaje(`¡El producto "${nombre}" se guardó correctamente!`);
@@ -82,6 +84,22 @@ export default function CrearProducto() {
           <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "15px" }}>
             <label style={{ fontWeight: "bold", color: "#2c3e50", fontSize: "0.95em" }}>Stock inicial:</label>
             <input style={styles.inputOverride} type="number" min="0" placeholder="0" value={stock} onChange={(e) => setStock(e.target.value)} required />
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <label style={{ fontWeight: "bold", color: "#2c3e50", fontSize: "0.95em" }}>Categoría:</label>
+            <select 
+              style={styles.inputOverride} 
+              value={categoria} 
+              onChange={(e) => setCategoria(e.target.value)}
+            >
+              <option value="General">General</option>
+              <option value="Bebidas">Bebidas</option>
+              <option value="Alimentos">Alimentos</option>
+              <option value="Golosinas">Golosinas</option>
+              <option value="Limpieza">Limpieza</option>
+              <option value="Cigarrillos">Cigarrillos</option>
+            </select>
           </div>
 
           <button type="submit" style={styles.actionBtnSolid} onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.02)"} onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}>
