@@ -138,6 +138,7 @@ async function obtenerVentas(req, res) {
 }
 
 // Obtener ranking de los productos más vendidos y ganancias
+// Obtener ranking de los productos más vendidos, recaudación y ganancias
 async function obtenerProductosMasVendidos(req, res) {
   try {
     const detalles = await DetalleVenta.findAll();
@@ -145,22 +146,32 @@ async function obtenerProductosMasVendidos(req, res) {
     const mapaProductos = {};
 
     for (const d of detalles) {
-      const idProd = d.id_producto || d.idProductos;
+      // Clave foránea según el DER: id_producto
+      const idProd = d.id_producto || d.idProductos || d.idProducto;
       if (!idProd) continue;
 
       const cantidad = Number(d.Cantidad || d.cantidad || 0);
-      const precio = Number(d.precio_unitario || d.Precio_Unitario || 0);
+      
+      // Columna exacta según DER: Precio_unitario o Subtotal
+      const subtotalLinea = Number(d.Subtotal || d.subtotal || 0);
+      let precioUnit = Number(d.Precio_unitario || d.precio_unitario || d.Precio_Unitario || 0);
 
       if (!mapaProductos[idProd]) {
         mapaProductos[idProd] = {
           idProductos: idProd,
           cantidadVendida: 0,
-          totalRecaudado: 0
+          totalRecaudado: 0,
         };
       }
 
       mapaProductos[idProd].cantidadVendida += cantidad;
-      mapaProductos[idProd].totalRecaudado += cantidad * precio;
+
+      // Si viene Subtotal en el detalle, sumamos directamente
+      if (subtotalLinea > 0) {
+        mapaProductos[idProd].totalRecaudado += subtotalLinea;
+      } else if (precioUnit > 0) {
+        mapaProductos[idProd].totalRecaudado += cantidad * precioUnit;
+      }
     }
 
     const ranking = [];
@@ -168,8 +179,16 @@ async function obtenerProductosMasVendidos(req, res) {
       const prodBD = await Producto.findByPk(idProd);
       if (prodBD) {
         const costoUnitario = Number(prodBD.Precio_costo || 0);
+        const precioVentaCatalogo = Number(prodBD.Precio_Venta || 0);
         const cantidadVendida = mapaProductos[idProd].cantidadVendida;
-        const totalRecaudado = mapaProductos[idProd].totalRecaudado;
+        
+        let totalRecaudado = mapaProductos[idProd].totalRecaudado;
+
+        // Fallback: Si en los detalles el precio quedó en 0, usamos el Precio_Venta del catálogo
+        if (totalRecaudado === 0 && precioVentaCatalogo > 0) {
+          totalRecaudado = cantidadVendida * precioVentaCatalogo;
+        }
+
         const costoTotal = costoUnitario * cantidadVendida;
         const gananciaTotal = totalRecaudado - costoTotal;
 
@@ -179,14 +198,15 @@ async function obtenerProductosMasVendidos(req, res) {
           categoria: prodBD.Categoria || 'General',
           stockActual: prodBD.Stock,
           precioCosto: costoUnitario,
-          precioVenta: Number(prodBD.Precio_Venta || 0),
+          precioVenta: precioVentaCatalogo,
           cantidadVendida,
           totalRecaudado,
-          gananciaTotal
+          gananciaTotal,
         });
       }
     }
 
+    // Ordenar de mayor a menor cantidad vendida
     ranking.sort((a, b) => b.cantidadVendida - a.cantidadVendida);
 
     res.status(200).json(ranking.slice(0, 10));
@@ -196,7 +216,6 @@ async function obtenerProductosMasVendidos(req, res) {
     res.status(500).json({ error: "No se pudo generar el reporte" });
   }
 }
-
 module.exports = {
   registrarVenta,
   obtenerVentas,

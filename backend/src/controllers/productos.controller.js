@@ -1,4 +1,4 @@
-const { Producto } = require('../models');
+const { Producto, Auditoria, Usuario } = require('../models');
 
 const STOCK_MINIMO = 5; // umbral de "poco stock" — ajustable
 
@@ -50,7 +50,7 @@ async function crearProducto(req, res) {
       Precio_costo: Precio_costo || 0,
       Precio_Venta: Precio_Venta || 0,
       Stock: Stock || 0,
-      Categoria: Categoria || 'General', // <-- Agregado con valor por defecto
+      Categoria: Categoria || 'General',
     });
 
     res.status(201).json(nuevoProducto);
@@ -68,12 +68,71 @@ async function editarProducto(req, res) {
       return res.status(404).json({ mensaje: 'Producto no encontrado' });
     }
 
-    // Como usa req.body completo, toma Categoria automáticamente
+    // 1. Obtenemos el ID del admin desde el token
+    const idAdmin = req.usuario?.id_Usuario || req.usuario?.id || 1;
+
+    // 2. Buscamos el usuario real en la base de datos para obtener su nombre completo
+    let nombreAdmin = 'Admin';
+    if (idAdmin) {
+      const adminBD = await Usuario.findByPk(idAdmin);
+      if (adminBD) {
+        // Usa "Nombre Apellido", o en su defecto el campo "Usuario"
+        const nombreCompleto = `${adminBD.Nombre || ''} ${adminBD.Apellido || ''}`.trim();
+        nombreAdmin = nombreCompleto || adminBD.Usuario || 'Admin';
+      }
+    }
+
+    // 3. Campos auditables
+    const camposAuditables = ['Precio_costo', 'Precio_Venta', 'Stock'];
+
+    for (const campo of camposAuditables) {
+      if (req.body[campo] !== undefined) {
+        const valorViejo = Number(producto[campo]);
+        const valorNuevo = Number(req.body[campo]);
+
+        // Si cambió el valor numérico, guardamos el log con el nombre real
+        if (valorViejo !== valorNuevo) {
+          await Auditoria.create({
+            id_usuario: idAdmin,
+            nombre_usuario: nombreAdmin,
+            id_producto: producto.idProductos || producto.id,
+            nombre_producto: producto.Nombre,
+            campo_modificado: campo,
+            valor_anterior: String(valorViejo),
+            valor_nuevo: String(valorNuevo),
+            fecha_hora: new Date(),
+          });
+        }
+      }
+    }
+
+    // 4. Actualizamos el producto en la BD
     await producto.update(req.body);
     res.json(producto);
+
   } catch (error) {
+    console.error("Error al editar producto:", error);
     res.status(500).json({ mensaje: 'Error al editar producto', error: error.message });
   }
 }
 
-module.exports = { listarProductos, buscarPorCodigoBarra, crearProducto, editarProducto };
+async function listarAuditorias(req, res) {
+  try {
+    const logs = await Auditoria.findAll({
+      order: [['fecha_hora', 'DESC']],
+      limit: 100,
+    });
+    res.json(logs);
+  } catch (error) {
+    console.error("Error al listar auditorías:", error);
+    res.status(500).json({ mensaje: 'Error al obtener auditorías', error: error.message });
+  }
+}
+
+module.exports = {
+  listarProductos,
+  buscarPorCodigoBarra,
+  crearProducto,
+  editarProducto,
+  listarAuditorias,
+};

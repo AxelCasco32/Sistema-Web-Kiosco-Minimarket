@@ -7,6 +7,7 @@
 //   Venta 1---N DetalleVenta
 //   Producto 1---N DetalleVenta
 // Exportar todos los modelos ya asociados para usarlos desde los controllers.
+// models/index.js
 const sequelize = require('../config/db');
 const Usuario = require('./Usuario');
 const Rol = require('./Rol');
@@ -15,9 +16,9 @@ const Cliente = require('./Cliente');
 const Venta = require('./Venta');
 const DetalleVenta = require('./DetalleVenta');
 const TurnoCaja = require('./TurnoCaja');
-// 
+const Auditoria = require('./Auditoria'); // <-- Solo require('./Auditoria')
+
 Usuario.belongsTo(Rol, { foreignKey: 'id_Rol' });
 Rol.hasMany(Usuario, { foreignKey: 'id_Rol' });
 
-// 
-module.exports = { sequelize, Usuario, Rol, Producto, Cliente, Venta, DetalleVenta, TurnoCaja }; 
+module.exports = { sequelize, Usuario, Rol, Producto, Cliente, Venta, DetalleVenta, TurnoCaja, Auditoria };

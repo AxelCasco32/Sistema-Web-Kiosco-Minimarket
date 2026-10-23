@@ -28,6 +28,7 @@ import RutaProtegida from "./components/RutaProtegida";
 import HistorialVentas from "./pages/HistorialVentas";
 import AperturaCaja from './components/AperturaCaja';
 import Reportes from "./pages/Reportes";
+import AuditoriaStock from "./pages/AuditoriaStock";
 
 function App() {
   return (
@@ -68,6 +69,7 @@ function App() {
       <Route path="*" element={<Navigate to="/login" replace />} />
 
       <Route path="/reportes" element={<Reportes />} />
+      <Route path="/auditoria-stock" element={<AuditoriaStock />} />
     </Routes>
   );
 }

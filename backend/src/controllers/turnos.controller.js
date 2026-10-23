@@ -1,23 +1,25 @@
-const { TurnoCaja, Venta } = require('../models'); // Asegurate de que se llame igual que en tu index.js de models
+const { TurnoCaja, Venta } = require('../models');
 
 const abrirTurno = async (req, res) => {
   try {
-    const { id_Usuario } = req.body;
+    const { id_Usuario, total_efectivo_inicial } = req.body;
+
+    // Tomamos el fondo enviado por el usuario, o 0 si no ingresó nada
+    const fondoInicial = Number(total_efectivo_inicial) || 0;
 
     const nuevoTurno = await TurnoCaja.create({
-      id_Usuario: id_Usuario || 1, // Por si no llega, ponemos 1
+      id_Usuario: id_Usuario || 1,
       Hora_Apertura: new Date(),
-      Total_Efectivo: 0,
+      Total_Efectivo: fondoInicial, // <-- Guarda el dinero con el que arranca la caja
       Total_Tarjeta: 0,
-      Estado: 'Abierto'
-      // Hora_Cierre queda en NULL por defecto
+      Estado: 'Abierto',
     });
 
-    res.status(201).json({ 
-      mensaje: 'Caja abierta correctamente', 
-      id_turno: nuevoTurno.idturnos_caja 
+    res.status(201).json({
+      mensaje: 'Caja abierta correctamente',
+      id_turno: nuevoTurno.idturnos_caja,
+      fondoInicial,
     });
-
   } catch (error) {
     console.error("Error al abrir caja:", error);
     res.status(500).json({ error: 'Error interno al abrir la caja' });
@@ -27,34 +29,38 @@ const abrirTurno = async (req, res) => {
 const obtenerResumen = async (req, res) => {
   try {
     const { id } = req.params;
-    
-    // Buscamos todas las ventas asociadas a este turno
+
+    // 1. Buscamos el turno para obtener el fondo inicial de apertura
+    const turno = await TurnoCaja.findByPk(id);
+    const fondoInicial = Number(turno?.Total_Efectivo || 0);
+
+    // 2. Buscamos las ventas registradas durante este turno
     const ventas = await Venta.findAll({ where: { id_turno: id } });
 
-    let totalEfectivo = 0;
+    let ventasEfectivo = 0;
     let totalTarjeta = 0;
 
-    ventas.forEach(venta => {
-      const monto = Number(venta.Total_Venta);
-      
-      // Atrapamos el dato sin importar si Sequelize lo trajo como Metodo_Pago o metodo_pago,
-      // lo pasamos a minúsculas y le sacamos los espacios vacíos por las dudas.
+    ventas.forEach((venta) => {
+      const monto = Number(venta.Total_Venta || 0);
       const metodo = String(venta.Metodo_Pago || venta.metodo_pago || '').toLowerCase().trim();
 
       if (metodo === 'efectivo') {
-        totalEfectivo += monto;
+        ventasEfectivo += monto;
       } else {
-        // Todo lo que sea 'tarjeta' o 'transferencia' cae acá
         totalTarjeta += monto;
       }
     });
 
-    res.status(200).json({ 
-      totalEfectivo, 
-      totalTarjeta, 
-      cantidadVentas: ventas.length 
-    });
+    // Total físico en el cajón = Fondo inicial + Ventas en efectivo
+    const totalEfectivo = fondoInicial + ventasEfectivo;
 
+    res.status(200).json({
+      fondoInicial,
+      ventasEfectivo,
+      totalEfectivo,
+      totalTarjeta,
+      cantidadVentas: ventas.length,
+    });
   } catch (error) {
     console.error("Error al obtener resumen:", error);
     res.status(500).json({ error: 'Error interno al calcular el resumen' });
@@ -66,17 +72,19 @@ const cerrarTurno = async (req, res) => {
     const { id } = req.params;
     const { totalEfectivo, totalTarjeta } = req.body;
 
-    await TurnoCaja.update({
-      Hora_Cierre: new Date(),
-      Total_Efectivo: totalEfectivo,
-      Total_Tarjeta: totalTarjeta,
-      Estado: 'Cerrado'
-    }, { 
-      where: { idturnos_caja: id } 
-    });
+    await TurnoCaja.update(
+      {
+        Hora_Cierre: new Date(),
+        Total_Efectivo: Number(totalEfectivo) || 0,
+        Total_Tarjeta: Number(totalTarjeta) || 0,
+        Estado: 'Cerrado',
+      },
+      {
+        where: { idturnos_caja: id },
+      }
+    );
 
     res.status(200).json({ mensaje: 'Caja cerrada correctamente' });
-
   } catch (error) {
     console.error("Error al cerrar caja:", error);
     res.status(500).json({ error: 'Error interno al cerrar la caja' });

@@ -5,12 +5,19 @@ import { Link } from "react-router-dom";
 import "../styles/common.css";
 import "../styles/pos.css"; 
 
+// Isotipos oficiales de KiosquitoYa
+import iconoMorado from "../assets/IconoKiosquitoYa_morado.png";
+import iconoBlanco from "../assets/IconoKiosquitoYa_blanco.png";
+
 export default function AdminDashboard() {
   const { logout, usuario: usuarioActual } = useAuth();
   const [usuarios, setUsuarios] = useState([]);
   const [roles, setRoles] = useState([]);
   const [productos, setProductos] = useState([]); 
   
+  // Estado para alternar la variante del isotipo al hacer clic
+  const [mostrarIconoBlanco, setMostrarIconoBlanco] = useState(false);
+
   // Estado para saber si estamos editando
   const [idSeleccionado, setIdSeleccionado] = useState(null);
 
@@ -148,15 +155,66 @@ export default function AdminDashboard() {
   return (
     <div className="caja" style={{ backgroundColor: "#f4f6f8", minHeight: "100vh" }}>
       
-      {/* HEADER DEL ADMIN */}
-      <header className="caja-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 30px', backgroundColor: '#261d60', color: 'white' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <div style={{ backgroundColor: "rgba(255, 255, 255, 0.1)", padding: "10px", borderRadius: "8px", display: "flex" }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
-            </svg>
+      {/* HEADER DEL ADMIN CON ISOTIPO INTERACTIVO */}
+{/* HEADER DEL ADMIN CON ISOTIPO INTERACTIVO (FIJO AL HACER SCROLL) */}
+      <header
+        className="caja-header"
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "14px 30px",
+          backgroundColor: "#261d60",
+          color: "white",
+          boxShadow: "0 4px 15px rgba(0, 0, 0, 0.15)", // Sombra suave para separar del contenido al scrollear
+        }}
+      >        
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          
+          {/* Contenedor del Isotipo Oficial */}
+          <div 
+            onClick={() => setMostrarIconoBlanco(!mostrarIconoBlanco)}
+            title="Hacé clic para alternar el estilo del ícono"
+            style={{ 
+              width: "44px", 
+              height: "44px", 
+              borderRadius: "10px", 
+              overflow: "hidden", 
+              cursor: "pointer", 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "center",
+              boxShadow: "0 3px 10px rgba(0,0,0,0.25)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              backgroundColor: mostrarIconoBlanco ? "#ffffff" : "transparent",
+              transition: "transform 0.15s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+          >
+            <img 
+              src={mostrarIconoBlanco ? iconoBlanco : iconoMorado} 
+              alt="KiosquitoYa Icon" 
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
           </div>
-          <h1 style={{ margin: 0, fontSize: "1.6rem", fontWeight: "bold" }}>Panel de Administración</h1>
+
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <h1 style={{ margin: 0, fontSize: "1.45rem", fontWeight: "800", letterSpacing: "0.3px" }}>
+                KiosquitoYa
+              </h1>
+              <span style={{ fontSize: "0.72em", backgroundColor: "rgba(255,255,255,0.18)", padding: "2px 8px", borderRadius: "10px", fontWeight: "600" }}>
+                ADMIN
+              </span>
+            </div>
+            <p style={{ margin: "2px 0 0 0", fontSize: "0.82em", opacity: 0.8 }}>
+              Panel de control y administración central
+            </p>
+          </div>
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', backgroundColor: 'rgba(255,255,255,0.1)', padding: '8px 20px', borderRadius: '40px', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -302,32 +360,113 @@ export default function AdminDashboard() {
         </div>
 
         {/* =========================================
-            SECCIÓN 2: ACCIONES RÁPIDAS
+            SECCIÓN 2: ACCIONES RÁPIDAS (ACTION CARDS)
            ========================================= */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "20px", marginBottom: "40px" }}>
-          <Link to="/crear-producto" style={{ ...styles.actionBtnSolid, textDecoration: "none" }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path><line x1="12" y1="5" x2="12" y2="15"></line><line x1="8" y1="10" x2="16" y2="10"></line></svg>
-            Registrar Producto Nuevo
-          </Link>
-          
-          <Link to="/editar-producto" style={{ ...styles.actionBtnOutline, textDecoration: "none" }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-            Editar Producto Existente
-          </Link>
-          
-          <Link to="/historial-ventas" style={{ ...styles.actionBtnSolid, textDecoration: "none" }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            Historial de Ventas
-          </Link>
+        <div style={{ marginBottom: "35px" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: "16px",
+            }}
+          >
+            {/* 1. Registrar Producto */}
+            <Link
+              to="/crear-producto"
+              style={actionCardStyle}
+              onMouseEnter={handleCardHover}
+              onMouseLeave={handleCardLeave}
+            >
+              <div style={iconBadgeStyle}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#261d60" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                  <line x1="12" y1="5" x2="12" y2="15"></line><line x1="8" y1="10" x2="16" y2="10"></line>
+                </svg>
+              </div>
+              <div>
+                <strong style={{ color: "#2c3e50", fontSize: "0.95em", display: "block" }}>Nuevo Producto</strong>
+                <span style={{ color: "#8c98a4", fontSize: "0.8em" }}>Cargar al catálogo</span>
+              </div>
+            </Link>
 
-          <Link to="/reportes" style={{ ...styles.actionBtnOutline, textDecoration: "none" }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10"></line>
-              <line x1="12" y1="20" x2="12" y2="4"></line>
-              <line x1="6" y1="20" x2="6" y2="14"></line>
-            </svg>
-            Reporte de Más Vendidos
-          </Link>
+            {/* 2. Editar Producto */}
+            <Link
+              to="/editar-producto"
+              style={actionCardStyle}
+              onMouseEnter={handleCardHover}
+              onMouseLeave={handleCardLeave}
+            >
+              <div style={iconBadgeStyle}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#261d60" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </div>
+              <div>
+                <strong style={{ color: "#2c3e50", fontSize: "0.95em", display: "block" }}>Editar Producto</strong>
+                <span style={{ color: "#8c98a4", fontSize: "0.8em" }}>Precios y stock</span>
+              </div>
+            </Link>
+
+            {/* 3. Historial de Ventas */}
+            <Link
+              to="/historial-ventas"
+              style={actionCardStyle}
+              onMouseEnter={handleCardHover}
+              onMouseLeave={handleCardLeave}
+            >
+              <div style={iconBadgeStyle}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#261d60" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+              </div>
+              <div>
+                <strong style={{ color: "#2c3e50", fontSize: "0.95em", display: "block" }}>Ventas</strong>
+                <span style={{ color: "#8c98a4", fontSize: "0.8em" }}>Historial y cobros</span>
+              </div>
+            </Link>
+
+            {/* 4. Reportes */}
+            <Link
+              to="/reportes"
+              style={actionCardStyle}
+              onMouseEnter={handleCardHover}
+              onMouseLeave={handleCardLeave}
+            >
+              <div style={iconBadgeStyle}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#261d60" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10"></line>
+                  <line x1="12" y1="20" x2="12" y2="4"></line>
+                  <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+              </div>
+              <div>
+                <strong style={{ color: "#2c3e50", fontSize: "0.95em", display: "block" }}>Reportes</strong>
+                <span style={{ color: "#8c98a4", fontSize: "0.8em" }}>Ganancias y margen</span>
+              </div>
+            </Link>
+
+            {/* 5. Auditoría */}
+            <Link
+              to="/auditoria-stock"
+              style={actionCardStyle}
+              onMouseEnter={handleCardHover}
+              onMouseLeave={handleCardLeave}
+            >
+              <div style={iconBadgeStyle}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#261d60" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+              </div>
+              <div>
+                <strong style={{ color: "#2c3e50", fontSize: "0.95em", display: "block" }}>Auditoría</strong>
+                <span style={{ color: "#8c98a4", fontSize: "0.8em" }}>Control de cambios</span>
+              </div>
+            </Link>
+          </div>
         </div>
 
         {/* =========================================
@@ -539,7 +678,6 @@ export default function AdminDashboard() {
                 const esCritico = prod.Stock <= 5;
                 const esModerado = prod.Stock > 5 && prod.Stock <= 15;
 
-                // Color del borde fino en todo el perímetro según el estado
                 const colorBordeFino = esCritico ? "#ffcdd2" : esModerado ? "#ffe082" : "#c8e6c9";
                 const colorBadgeFondo = esCritico ? "#ffebee" : esModerado ? "#fff8e1" : "#e8f5e9";
                 const colorBadgeTexto = esCritico ? "#c62828" : esModerado ? "#b78103" : "#2e7d32";
@@ -549,7 +687,7 @@ export default function AdminDashboard() {
                     key={prod.idProductos || prod.Cod_barra || prod.id}
                     style={{
                       backgroundColor: "#ffffff",
-                      border: `1.5px solid ${colorBordeFino}`, // Borde fino en todo el contorno
+                      border: `1.5px solid ${colorBordeFino}`,
                       borderRadius: "10px",
                       padding: "14px 18px",
                       display: "flex",
@@ -648,4 +786,41 @@ const styles = {
   deleteBtn: {
     backgroundColor: "#ffebee", color: "#c62828", border: "1px solid #ffcdd2", padding: "12px", borderRadius: "8px", fontSize: "0.95rem", fontWeight: "bold", cursor: "pointer", display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", transition: "background 0.2s"
   }
+};
+
+const actionCardStyle = {
+  backgroundColor: "#ffffff",
+  border: "1px solid #edf0f2",
+  borderRadius: "12px",
+  padding: "16px 18px",
+  textDecoration: "none",
+  display: "flex",
+  alignItems: "center",
+  gap: "14px",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+  transition: "all 0.2s ease",
+  cursor: "pointer",
+};
+
+const iconBadgeStyle = {
+  width: "42px",
+  height: "42px",
+  borderRadius: "10px",
+  backgroundColor: "#f0edfd",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  flexShrink: 0,
+};
+
+const handleCardHover = (e) => {
+  e.currentTarget.style.transform = "translateY(-2px)";
+  e.currentTarget.style.boxShadow = "0 6px 16px rgba(38, 29, 96, 0.08)";
+  e.currentTarget.style.borderColor = "#c5c0e6";
+};
+
+const handleCardLeave = (e) => {
+  e.currentTarget.style.transform = "translateY(0)";
+  e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.02)";
+  e.currentTarget.style.borderColor = "#edf0f2";
 };
