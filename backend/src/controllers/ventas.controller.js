@@ -136,7 +136,69 @@ async function obtenerVentas(req, res) {
     res.status(500).json({ error: "No se pudo cargar el historial de ventas" });
   }
 }
+
+// Obtener ranking de los productos más vendidos y ganancias
+async function obtenerProductosMasVendidos(req, res) {
+  try {
+    const detalles = await DetalleVenta.findAll();
+
+    const mapaProductos = {};
+
+    for (const d of detalles) {
+      const idProd = d.id_producto || d.idProductos;
+      if (!idProd) continue;
+
+      const cantidad = Number(d.Cantidad || d.cantidad || 0);
+      const precio = Number(d.precio_unitario || d.Precio_Unitario || 0);
+
+      if (!mapaProductos[idProd]) {
+        mapaProductos[idProd] = {
+          idProductos: idProd,
+          cantidadVendida: 0,
+          totalRecaudado: 0
+        };
+      }
+
+      mapaProductos[idProd].cantidadVendida += cantidad;
+      mapaProductos[idProd].totalRecaudado += cantidad * precio;
+    }
+
+    const ranking = [];
+    for (const idProd of Object.keys(mapaProductos)) {
+      const prodBD = await Producto.findByPk(idProd);
+      if (prodBD) {
+        const costoUnitario = Number(prodBD.Precio_costo || 0);
+        const cantidadVendida = mapaProductos[idProd].cantidadVendida;
+        const totalRecaudado = mapaProductos[idProd].totalRecaudado;
+        const costoTotal = costoUnitario * cantidadVendida;
+        const gananciaTotal = totalRecaudado - costoTotal;
+
+        ranking.push({
+          idProductos: idProd,
+          nombre: prodBD.Nombre,
+          categoria: prodBD.Categoria || 'General',
+          stockActual: prodBD.Stock,
+          precioCosto: costoUnitario,
+          precioVenta: Number(prodBD.Precio_Venta || 0),
+          cantidadVendida,
+          totalRecaudado,
+          gananciaTotal
+        });
+      }
+    }
+
+    ranking.sort((a, b) => b.cantidadVendida - a.cantidadVendida);
+
+    res.status(200).json(ranking.slice(0, 10));
+
+  } catch (error) {
+    console.error("Error al generar reporte de productos más vendidos:", error);
+    res.status(500).json({ error: "No se pudo generar el reporte" });
+  }
+}
+
 module.exports = {
   registrarVenta,
-  obtenerVentas // <-- Exportamos la nueva función
+  obtenerVentas,
+  obtenerProductosMasVendidos // <-- Exportamos la nueva función
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import { Link } from "react-router-dom";
@@ -19,6 +19,11 @@ export default function AdminDashboard() {
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
   const [idRol, setIdRol] = useState(1);
+
+  // Estados de control para la sección de Stock
+  const [busquedaStock, setBusquedaStock] = useState("");
+  const [filtroAlerta, setFiltroAlerta] = useState("todos"); // 'todos', 'critico', 'moderado', 'optimo'
+  const [ordenStock, setOrdenStock] = useState("menor"); // 'menor', 'mayor', 'nombre'
   
   const cargarDatos = async () => {
     try {
@@ -52,7 +57,7 @@ export default function AdminDashboard() {
     setNombre(u.Nombre || "");
     setApellido(u.Apellido || "");
     setUser(u.Usuario || "");
-    setPassword(""); // Se deja vacío para no cambiar contraseña a menos que se quiera
+    setPassword("");
     setIdRol(u.id_Rol || u.Rol?.id_Rol || 1);
   };
 
@@ -60,7 +65,6 @@ export default function AdminDashboard() {
     e.preventDefault();
     try {
       if (idSeleccionado) {
-        // MODO EDICIÓN (PUT)
         await api.put(`/usuarios/${idSeleccionado}`, {
           Nombre: nombre,
           Apellido: apellido,
@@ -70,7 +74,6 @@ export default function AdminDashboard() {
         });
         alert("¡Usuario modificado con éxito!");
       } else {
-        // MODO CREACIÓN (POST)
         await api.post("/usuarios", {
           Nombre: nombre,
           Apellido: apellido,
@@ -91,7 +94,6 @@ export default function AdminDashboard() {
   const handleEliminar = async () => {
     if (!idSeleccionado) return;
 
-    // Validación: no auto-eliminarse
     const idLogueado = usuarioActual?.id || usuarioActual?.id_Usuario;
     if (String(idSeleccionado) === String(idLogueado)) {
       alert("No podés eliminar tu propia cuenta mientras estás logueado.");
@@ -111,34 +113,37 @@ export default function AdminDashboard() {
     }
   };
 
-  const obtenerEstiloStock = (stock) => {
-    if (stock <= 5) return { 
-      bg: "#ffebee", text: "#c62828", etiqueta: "Faltan unidades",
-      icono: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c62828" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-          <line x1="12" y1="9" x2="12" y2="13"></line>
-          <line x1="12" y1="17" x2="12.01" y2="17"></line>
-        </svg>
-      )
-    }; 
-    if (stock <= 15) return { 
-      bg: "#fff8e1", text: "#b78103", etiqueta: "Stock moderado",
-      icono: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b78103" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
-      )
-    }; 
-    return { 
-      bg: "#e8f5e9", text: "#2e7d32", etiqueta: "Stock óptimo",
-      icono: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
-      )
-    }; 
-  };
+  // Conteo reactivo para las píldoras de semáforo
+  const conteoAlertas = useMemo(() => {
+    return {
+      critico: productos.filter((p) => p.Stock <= 5).length,
+      moderado: productos.filter((p) => p.Stock > 5 && p.Stock <= 15).length,
+      optimo: productos.filter((p) => p.Stock > 15).length,
+    };
+  }, [productos]);
+
+  // Filtrado y ordenamiento de inventario
+  const productosStockProcesados = useMemo(() => {
+    return productos
+      .filter((prod) => {
+        const coincideTexto =
+          (prod.Nombre || "").toLowerCase().includes(busquedaStock.toLowerCase()) ||
+          (prod.Cod_barra && String(prod.Cod_barra).includes(busquedaStock));
+
+        let coincideAlerta = true;
+        if (filtroAlerta === "critico") coincideAlerta = prod.Stock <= 5;
+        else if (filtroAlerta === "moderado") coincideAlerta = prod.Stock > 5 && prod.Stock <= 15;
+        else if (filtroAlerta === "optimo") coincideAlerta = prod.Stock > 15;
+
+        return coincideTexto && coincideAlerta;
+      })
+      .sort((a, b) => {
+        if (ordenStock === "menor") return a.Stock - b.Stock;
+        if (ordenStock === "mayor") return b.Stock - a.Stock;
+        if (ordenStock === "nombre") return (a.Nombre || "").localeCompare(b.Nombre || "");
+        return 0;
+      });
+  }, [productos, busquedaStock, filtroAlerta, ordenStock]);
 
   return (
     <div className="caja" style={{ backgroundColor: "#f4f6f8", minHeight: "100vh" }}>
@@ -265,9 +270,9 @@ export default function AdminDashboard() {
                       border: seleccionado ? "1.5px solid #261d60" : "1px solid #eef0f2", 
                       display: 'flex', 
                       justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      cursor: "pointer",
-                      transition: "all 0.2s"
+                      alignItems: 'center', 
+                      cursor: "pointer", 
+                      transition: "all 0.2s" 
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -314,53 +319,315 @@ export default function AdminDashboard() {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
             Historial de Ventas
           </Link>
+
+          <Link to="/reportes" style={{ ...styles.actionBtnOutline, textDecoration: "none" }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            Reporte de Más Vendidos
+          </Link>
         </div>
 
         {/* =========================================
-            SECCIÓN 3: ESTADO DEL STOCK (SEMÁFORO)
+            SECCIÓN 3: ESTADO DEL STOCK (MODERNIZADO)
            ========================================= */}
-        <section className="card" style={{ padding: "30px", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", border: "1px solid #f0f0f0", backgroundColor: "white" }}>
-          <h2 style={{ marginTop: 0, marginBottom: "10px", color: "#2c3e50" }}>Estado del Stock</h2>
-          <p style={{ color: "#7f8c8d", marginBottom: "25px", paddingBottom: "15px", borderBottom: "2px solid #f4f6f8" }}>Monitoreo en tiempo real de la mercadería.</p>
-          
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, maxHeight: "400px", overflowY: "auto", paddingRight: "10px" }}>
-            {productos.map(p => {
-              const estilo = obtenerEstiloStock(p.Stock);
-              return (
-                <li 
-                  key={p.idProductos || p.Cod_barra} 
-                  className="alerta-stock-interactiva"
-                  style={{ 
-                    padding: '15px 20px', 
-                    marginBottom: '12px', 
-                    borderRadius: '10px', 
-                    backgroundColor: estilo.bg,
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    border: `1px solid ${estilo.text}30`,
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.01)'
-                  }}
-                >
-                  <div>
-                    <strong style={{ fontSize: '1.1em', color: '#2c3e50' }}>{p.Nombre}</strong> 
-                    <p style={{ margin: '5px 0 0 0', color: '#7f8c8d', fontSize: "0.9em" }}>Cod: {p.Cod_barra}</p>
+        <section
+          style={{
+            backgroundColor: "#ffffff",
+            borderRadius: "14px",
+            padding: "26px",
+            boxShadow: "0 4px 18px rgba(0,0,0,0.03)",
+            border: "1px solid #edf0f2",
+            marginBottom: "30px",
+          }}
+        >
+          {/* Encabezado y Selector de ordenamiento */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              flexWrap: "wrap",
+              gap: "15px",
+              marginBottom: "20px",
+            }}
+          >
+            <div>
+              <h2 style={{ margin: 0, color: "#2c3e50", fontSize: "1.35em", fontWeight: "700" }}>
+                Estado del Stock
+              </h2>
+              <p style={{ margin: "4px 0 0 0", color: "#7f8c8d", fontSize: "0.9em" }}>
+                Monitoreo en tiempo real para control de reposición de mercadería.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <label style={{ fontSize: "0.85em", color: "#7f8c8d", fontWeight: "600" }}>
+                Ordenar por:
+              </label>
+              <select
+                value={ordenStock}
+                onChange={(e) => setOrdenStock(e.target.value)}
+                style={{
+                  padding: "7px 12px",
+                  borderRadius: "8px",
+                  border: "1px solid #dcdde1",
+                  fontSize: "0.88em",
+                  color: "#2c3e50",
+                  outline: "none",
+                  backgroundColor: "#fcfdfe",
+                  cursor: "pointer",
+                }}
+              >
+                <option value="menor">Menor stock (urgente)</option>
+                <option value="mayor">Mayor stock</option>
+                <option value="nombre">Nombre (A - Z)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Barra de Filtros y Búsqueda */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "15px",
+              flexWrap: "wrap",
+              paddingBottom: "18px",
+              marginBottom: "18px",
+              borderBottom: "1px solid #f1f2f6",
+            }}
+          >
+            {/* Píldoras de estado */}
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                onClick={() => setFiltroAlerta("todos")}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: "20px",
+                  border: filtroAlerta === "todos" ? "1px solid #261d60" : "1px solid #e0e0e0",
+                  backgroundColor: filtroAlerta === "todos" ? "#261d60" : "#ffffff",
+                  color: filtroAlerta === "todos" ? "#ffffff" : "#555",
+                  fontSize: "0.85em",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+              >
+                Todos ({productos.length})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFiltroAlerta("critico")}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: "20px",
+                  border: "1px solid #ffcdd2",
+                  backgroundColor: filtroAlerta === "critico" ? "#ffebee" : "#ffffff",
+                  color: "#c62828",
+                  fontSize: "0.85em",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#c62828" }}></span>
+                Crítico ({conteoAlertas.critico})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFiltroAlerta("moderado")}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: "20px",
+                  border: "1px solid #ffe082",
+                  backgroundColor: filtroAlerta === "moderado" ? "#fff8e1" : "#ffffff",
+                  color: "#f57f17",
+                  fontSize: "0.85em",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#f57f17" }}></span>
+                Moderado ({conteoAlertas.moderado})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFiltroAlerta("optimo")}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: "20px",
+                  border: "1px solid #c8e6c9",
+                  backgroundColor: filtroAlerta === "optimo" ? "#e8f5e9" : "#ffffff",
+                  color: "#2e7d32",
+                  fontSize: "0.85em",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#2e7d32" }}></span>
+                Óptimo ({conteoAlertas.optimo})
+              </button>
+            </div>
+
+            {/* Buscador de producto por nombre o código */}
+            <div style={{ position: "relative", minWidth: "240px", flex: "1 1 240px", maxWidth: "340px" }}>
+              <input
+                type="text"
+                placeholder="Buscar por nombre o código..."
+                value={busquedaStock}
+                onChange={(e) => setBusquedaStock(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px 8px 34px",
+                  borderRadius: "20px",
+                  border: "1px solid #dcdde1",
+                  fontSize: "0.88em",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#95a5a6"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ position: "absolute", left: "12px", top: "10px" }}
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </div>
+          </div>
+
+          {/* Lista con Scroll Interno y Bordado Fino Perimetral */}
+          <div
+            style={{
+              maxHeight: "420px",
+              overflowY: "auto",
+              paddingRight: "6px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+            }}
+          >
+            {productosStockProcesados.length === 0 ? (
+              <div style={{ padding: "30px", textAlign: "center", color: "#95a5a6" }}>
+                No se encontraron productos que coincidan con los filtros aplicados.
+              </div>
+            ) : (
+              productosStockProcesados.map((prod) => {
+                const esCritico = prod.Stock <= 5;
+                const esModerado = prod.Stock > 5 && prod.Stock <= 15;
+
+                // Color del borde fino en todo el perímetro según el estado
+                const colorBordeFino = esCritico ? "#ffcdd2" : esModerado ? "#ffe082" : "#c8e6c9";
+                const colorBadgeFondo = esCritico ? "#ffebee" : esModerado ? "#fff8e1" : "#e8f5e9";
+                const colorBadgeTexto = esCritico ? "#c62828" : esModerado ? "#b78103" : "#2e7d32";
+
+                return (
+                  <div
+                    key={prod.idProductos || prod.Cod_barra || prod.id}
+                    style={{
+                      backgroundColor: "#ffffff",
+                      border: `1.5px solid ${colorBordeFino}`, // Borde fino en todo el contorno
+                      borderRadius: "10px",
+                      padding: "14px 18px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      transition: "all 0.2s ease",
+                      boxShadow: "0 2px 5px rgba(0,0,0,0.02)",
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = "translateY(-1px)";
+                      e.currentTarget.style.boxShadow = "0 4px 10px rgba(0,0,0,0.05)";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "0 2px 5px rgba(0,0,0,0.02)";
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <strong style={{ color: "#2c3e50", fontSize: "1.05em" }}>
+                          {prod.Nombre}
+                        </strong>
+                        <span
+                          style={{
+                            backgroundColor: "#f0edfd",
+                            color: "#261d60",
+                            fontSize: "0.75em",
+                            padding: "2px 8px",
+                            borderRadius: "12px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          {prod.Categoria || "General"}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: "0.85em", color: "#8c98a4", marginTop: "3px", display: "block" }}>
+                        Cod: {prod.Cod_barra || "Sin código"}
+                      </span>
+                    </div>
+
+                    <div
+                      style={{
+                        backgroundColor: colorBadgeFondo,
+                        color: colorBadgeTexto,
+                        padding: "6px 14px",
+                        borderRadius: "20px",
+                        fontWeight: "bold",
+                        fontSize: "0.9em",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "7px",
+                        border: `1px solid ${colorBadgeTexto}30`,
+                      }}
+                    >
+                      {esCritico ? (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                          <line x1="12" y1="9" x2="12" y2="13"></line>
+                          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                      ) : esModerado ? (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="12" y1="8" x2="12" y2="12"></line>
+                          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                      ) : (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      )}
+                      Stock: {prod.Stock}
+                    </div>
                   </div>
-                  <div style={{ textAlign: "right" }}>
-                    <span style={{ 
-                      fontWeight: 'bold', color: estilo.text, fontSize: "1.05em", 
-                      backgroundColor: 'white', padding: '6px 15px', borderRadius: '20px', 
-                      border: `1px solid ${estilo.text}20`, display: 'inline-flex', alignItems: 'center', gap: '6px'
-                    }}>
-                      {estilo.icono}
-                      Stock: {p.Stock}
-                    </span>
-                  </div>
-                </li>
-              );
-            })}
-            {productos.length === 0 && <p style={{ color: "#7f8c8d", fontStyle: "italic" }}>No hay productos cargados aún.</p>}
-          </ul>
+                );
+              })
+            )}
+          </div>
         </section>
 
       </div>

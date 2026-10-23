@@ -27,6 +27,7 @@ import EditarProducto from "./pages/EditarProducto";
 import RutaProtegida from "./components/RutaProtegida"; 
 import HistorialVentas from "./pages/HistorialVentas";
 import AperturaCaja from './components/AperturaCaja';
+import Reportes from "./pages/Reportes";
 
 function App() {
   return (
@@ -65,6 +66,8 @@ function App() {
 
       {/* 5. Ruta Comodín: Si tipean cualquier fruta, los mandamos al login */}
       <Route path="*" element={<Navigate to="/login" replace />} />
+
+      <Route path="/reportes" element={<Reportes />} />
     </Routes>
   );
 }
