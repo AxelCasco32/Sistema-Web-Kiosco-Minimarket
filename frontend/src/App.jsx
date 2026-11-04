@@ -30,6 +30,7 @@ import AperturaCaja from './components/AperturaCaja';
 import Reportes from "./pages/Reportes";
 import AuditoriaStock from "./pages/AuditoriaStock";
 import CierresCaja from "./pages/CierresCaja";
+import RecuperarContrasena from "./pages/RecuperarContrasena";
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
       
       {/* 1. Ruta Pública */}
       <Route path="/login" element={<Login />} />
+      <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
 
       {/* 2. Ruta de Apertura de Caja (¡Protegida!) */}
       <Route 

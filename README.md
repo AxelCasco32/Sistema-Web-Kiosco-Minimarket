@@ -115,6 +115,15 @@ powershell
 
 (te instala React, React Router, Axios y Vite)
 
+Recuperar la contraseña del Admin
+
+- Desde el panel de Admin, en "Recuperación", generá tu código de recuperación (se muestra una sola vez) y guardalo en un lugar seguro.
+- Si olvidás la contraseña: en el login, "¿Olvidaste tu contraseña?" → usuario + código + contraseña nueva. El código sirve una sola vez; después generá otro.
+- Los cajeros le piden al Admin que les cambie la clave desde la gestión de usuarios.
+- Último recurso (con acceso al .env): desde backend, node scripts/resetAdmin.js <usuario> <nuevaClave>
+
+El backend aplica solo las migraciones que falten en la base al arrancar (src/config/migraciones.js).
+
 Reglas del repo
 El .env no se sube (ya está en .gitignore) — cada uno crea el suyo copiando .env.example y pone ahí su usuario/contraseña de MySQL.
 Un modelo por tabla, un controller y una ruta por recurso. Nada de meter todo en un archivo.
