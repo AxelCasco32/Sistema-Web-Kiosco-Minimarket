@@ -52,6 +52,11 @@ CREATE TABLE `usuarios` (
   CONSTRAINT `fk_usuario_rol` FOREIGN KEY (`id_Rol`) REFERENCES `roles` (`id_Rol`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Usuario administrador inicial (usuario: admin / contraseña: admin123).
+-- Cambiar la contraseña desde el panel después del primer ingreso.
+INSERT INTO `usuarios` (`id_Rol`, `Nombre`, `Apellido`, `Usuario`, `password_hash`, `Activo`)
+VALUES (1, 'Admin', 'Kiosco', 'admin', '$2a$10$zV5pCek/wZuXcQZvWLVl2OHWb31kIhbKLimCcDZavaHQfUHo/ydNq', 1);
+
 -- ---------------------------------------------------------------------
 -- Tabla: clientes
 -- ---------------------------------------------------------------------
@@ -81,6 +86,7 @@ CREATE TABLE `productos` (
   `Precio_Venta` DECIMAL(12,2) NOT NULL DEFAULT 0.00,
   `Stock` INT NOT NULL DEFAULT 0,
   `Activo` TINYINT(1) NOT NULL DEFAULT 1,
+  `Categoria` VARCHAR(50) NOT NULL DEFAULT 'General',
   `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`idProductos`),
@@ -144,6 +150,24 @@ CREATE TABLE `detalle_venta` (
   KEY `fk_id_producto_idx` (`id_producto`),
   CONSTRAINT `fk_detalle_venta` FOREIGN KEY (`id_venta`) REFERENCES `venta` (`id_Venta`),
   CONSTRAINT `fk_id_producto` FOREIGN KEY (`id_producto`) REFERENCES `productos` (`idProductos`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------------
+-- Tabla: auditorias (cambios manuales de precio/stock hechos por el Admin)
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `auditorias`;
+CREATE TABLE `auditorias` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `id_usuario` INT NOT NULL,
+  `nombre_usuario` VARCHAR(100) NOT NULL,
+  `id_producto` INT NOT NULL,
+  `nombre_producto` VARCHAR(145) NOT NULL,
+  `campo_modificado` VARCHAR(50) NOT NULL,
+  `valor_anterior` VARCHAR(100) NOT NULL,
+  `valor_nuevo` VARCHAR(100) NOT NULL,
+  `fecha_hora` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_auditorias_fecha` (`fecha_hora`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 SET FOREIGN_KEY_CHECKS = 1;
