@@ -2,9 +2,18 @@ const { Producto, Auditoria, Usuario } = require('../models');
 
 const STOCK_MINIMO = 5; // umbral de "poco stock" — ajustable
 
+// El precio de costo es información sensible: solo el Admin puede verlo.
+function esAdmin(req) {
+  return req.usuario?.rol_nombre === 'Admin';
+}
+
+function atributosVisibles(req) {
+  return esAdmin(req) ? undefined : { exclude: ['Precio_costo'] };
+}
+
 async function listarProductos(req, res) {
   try {
-    const productos = await Producto.findAll();
+    const productos = await Producto.findAll({ attributes: atributosVisibles(req) });
     const conAlerta = productos.map((p) => ({
       ...p.toJSON(),
       stockBajo: p.Stock <= STOCK_MINIMO,
@@ -19,6 +28,7 @@ async function buscarPorCodigoBarra(req, res) {
   try {
     const producto = await Producto.findOne({
       where: { Cod_barra: req.params.cod_barra },
+      attributes: atributosVisibles(req),
     });
 
     if (!producto) {

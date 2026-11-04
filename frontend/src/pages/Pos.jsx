@@ -264,6 +264,7 @@ export default function Pos() {
           : "consumidor_final",
         id_cliente: clienteSeleccionado ? clienteSeleccionado.id : null,
         id_turno: idTurnoActual,
+        monto_recibido: medioPago === "efectivo" ? valorRecibidoNum : undefined,
         comprobante: numeroComprobante,
         detalle: detalleVenta,
       };

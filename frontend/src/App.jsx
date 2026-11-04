@@ -29,6 +29,7 @@ import HistorialVentas from "./pages/HistorialVentas";
 import AperturaCaja from './components/AperturaCaja';
 import Reportes from "./pages/Reportes";
 import AuditoriaStock from "./pages/AuditoriaStock";
+import CierresCaja from "./pages/CierresCaja";
 
 function App() {
   return (
@@ -64,12 +65,13 @@ function App() {
       <Route path="/crear-producto" element={<RutaProtegida rolesPermitidos={['Admin']}><CrearProducto /></RutaProtegida>} />
       <Route path="/editar-producto" element={<RutaProtegida rolesPermitidos={['Admin']}><EditarProducto /></RutaProtegida>} />
       <Route path="/historial-ventas" element={<RutaProtegida rolesPermitidos={['Admin']}><HistorialVentas /></RutaProtegida>} />
+      <Route path="/reportes" element={<RutaProtegida rolesPermitidos={['Admin']}><Reportes /></RutaProtegida>} />
+      <Route path="/auditoria-stock" element={<RutaProtegida rolesPermitidos={['Admin']}><AuditoriaStock /></RutaProtegida>} />
+      <Route path="/cierres-caja" element={<RutaProtegida rolesPermitidos={['Admin']}><CierresCaja /></RutaProtegida>} />
 
       {/* 5. Ruta Comodín: Si tipean cualquier fruta, los mandamos al login */}
       <Route path="*" element={<Navigate to="/login" replace />} />
 
-      <Route path="/reportes" element={<Reportes />} />
-      <Route path="/auditoria-stock" element={<AuditoriaStock />} />
     </Routes>
   );
 }

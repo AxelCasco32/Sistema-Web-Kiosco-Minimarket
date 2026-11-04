@@ -7,15 +7,18 @@ const {
   crearUsuario,
   actualizarUsuario,
   cambiarEstadoUsuario,
-  eliminarUsuario, // <-- Agregado a la importación
+  eliminarUsuario,
 } = require('../controllers/usuarios.controller');
 
-// Rutas de Usuarios
+// La gestión de usuarios es exclusiva del Administrador:
+// todas las rutas exigen sesión iniciada y rol Admin.
+router.use(verificarToken, soloAdmin);
+
 router.get('/roles', listarRoles);
 router.get('/', listarUsuarios);
 router.post('/', crearUsuario);
-router.put('/:id', verificarToken, actualizarUsuario); // Dejamos una sola ruta PUT protegida
+router.put('/:id', actualizarUsuario);
 router.patch('/:id/estado', cambiarEstadoUsuario);
-router.delete('/:id', verificarToken, eliminarUsuario); // Ruta DELETE protegida
+router.delete('/:id', eliminarUsuario);
 
 module.exports = router;

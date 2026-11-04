@@ -1,11 +1,47 @@
 const { Producto, Venta, DetalleVenta, TurnoCaja, Usuario, sequelize } = require('../models');
+const { puedeOperarTurno } = require('./turnos.controller');
+
+// Normaliza lo que manda el POS ("efectivo", "tarjeta", "transferencia", "qr")
+// a los valores del ENUM de la tabla venta.
+const METODOS_PAGO = {
+  efectivo: 'Efectivo',
+  tarjeta: 'Tarjeta',
+  transferencia: 'Transferencia',
+  qr: 'QR',
+};
+
 async function registrarVenta(req, res) {
   // Recibimos los datos del frontend (desde Pos.jsx)
-  const { total, metodo_pago, id_cliente, id_turno, detalle } = req.body;
+  const { total, metodo_pago, id_cliente, id_turno, detalle, monto_recibido } = req.body;
 
   if (!detalle || detalle.length === 0) {
     return res.status(400).json({ error: "El detalle de la venta está vacío" });
   }
+
+  const metodo = METODOS_PAGO[String(metodo_pago || '').toLowerCase().trim()];
+  if (!metodo) {
+    return res.status(400).json({ error: "Método de pago inválido" });
+  }
+
+  // La venta tiene que caer en un turno abierto del usuario que cobra,
+  // así el arqueo y los faltantes quedan a nombre del responsable correcto.
+  const turno = id_turno ? await TurnoCaja.findByPk(id_turno) : null;
+  if (!turno || turno.Estado !== 'Abierto') {
+    return res.status(400).json({ error: "No hay un turno de caja abierto. Abrí la caja antes de cobrar." });
+  }
+  if (!puedeOperarTurno(req, turno)) {
+    return res.status(403).json({ error: "El turno indicado pertenece a otro usuario" });
+  }
+
+  const totalVenta = Number(total) || 0;
+  let montoRecibido = totalVenta;
+  if (metodo === 'Efectivo' && monto_recibido !== undefined && monto_recibido !== '') {
+    montoRecibido = Number(monto_recibido);
+    if (Number.isNaN(montoRecibido) || montoRecibido < totalVenta) {
+      return res.status(400).json({ error: "El efectivo recibido no cubre el total" });
+    }
+  }
+  const vuelto = Number((montoRecibido - totalVenta).toFixed(2));
 
   // Iniciamos la Transacción por seguridad (si algo falla, no se descuenta nada)
   const t = await sequelize.transaction();
@@ -13,13 +49,13 @@ async function registrarVenta(req, res) {
   try {
     // 1. Creamos el registro general de la Venta (El Ticket)
     const nuevaVenta = await Venta.create({
-      Total_Venta: total,
-      Metodo_Pago: metodo_pago,
+      Total_Venta: totalVenta,
+      Metodo_Pago: metodo,
       id_cliente: id_cliente || null, // null si es consumidor final
       Fecha_Hora: new Date(),
-      Monto: total, 
-      Vuelto: 0,     
-      id_turno: id_turno || 1 // <-- FORZAMOS EL TURNO 1 (Luego lo haremos dinámico con la Apertura de Caja)
+      Monto: montoRecibido, // lo que entregó el cliente
+      Vuelto: vuelto,
+      id_turno: turno.idturnos_caja
     }, { transaction: t });
 
     // 2. Recorremos cada producto del carrito para descontar stock y armar el detalle

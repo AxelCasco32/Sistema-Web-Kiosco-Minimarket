@@ -94,6 +94,10 @@ powershell
    cd kiosco-web
    mysql -u root -p -e "CREATE DATABASE kiosco_db;"
    mysql -u root -p kiosco_db < database/schema.sql
+
+Si ya tenías la base creada de antes, corré una vez la migración del arqueo de caja:
+powershell
+   mysql -u root -p kiosco_db < database/migrations/001_arqueo_caja_y_transferencia.sql
 Backend:
 powershell
    cd backend
