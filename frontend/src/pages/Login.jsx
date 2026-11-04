@@ -67,9 +67,7 @@ export default function Login() {
   }
 
   const manejarOlvidoContrasena = () => {
-    alert(
-      "Para reestablecer tu contraseña, comunicate con el Administrador o soporte técnico del sistema."
-    );
+    navigate("/recuperar-contrasena");
   };
 
   return (

@@ -11,6 +11,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const { sequelize } = require('./src/models');
+const { aplicarMigraciones } = require('./src/config/migraciones');
 
 const authRoutes = require('./src/routes/auth.routes');
 const usuariosRoutes = require('./src/routes/usuarios.routes');
@@ -42,11 +43,15 @@ sequelize
   .authenticate()
   .then(() => {
     console.log('Conexión a MySQL establecida correctamente.');
+    // Deja la base al día (columnas nuevas) antes de atender pedidos
+    return aplicarMigraciones();
+  })
+  .then(() => {
     app.listen(PORT, () => {
       console.log(`Servidor corriendo en http://localhost:${PORT}`);
     });
   })
   .catch((err) => {
-    console.error('No se pudo conectar a la base de datos:');
+    console.error('No se pudo iniciar el backend (conexión o migración de la base):');
     console.error(err);
   });

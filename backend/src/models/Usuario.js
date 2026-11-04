@@ -15,6 +15,8 @@ const Usuario = sequelize.define(
     Usuario: { type: DataTypes.STRING(45), allowNull: false, unique: true },
     password_hash: { type: DataTypes.STRING(255), allowNull: false },
     Activo: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    // Hash del código de recuperación del Admin (null = no generado / ya usado)
+    codigo_recuperacion_hash: { type: DataTypes.STRING(255), allowNull: true },
   },
   {
     tableName: 'usuarios',
