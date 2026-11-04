@@ -10,9 +10,9 @@ const {
 } = require('../controllers/productos.controller');
 
 // Rutas
-router.get('/', listarProductos);
+router.get('/', verificarToken, listarProductos);
 router.get('/auditorias', verificarToken, soloAdmin, listarAuditorias);
-router.get('/:cod_barra', buscarPorCodigoBarra);
+router.get('/:cod_barra', verificarToken, buscarPorCodigoBarra);
 router.post('/', verificarToken, soloAdmin, crearProducto);
 router.put('/:id', verificarToken, soloAdmin, editarProducto);
 

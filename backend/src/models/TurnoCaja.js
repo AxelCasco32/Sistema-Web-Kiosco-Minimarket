@@ -19,12 +19,25 @@ const TurnoCaja = sequelize.define('TurnoCaja', {
     type: DataTypes.DATE,
     allowNull: true
   },
+  Fondo_Inicial: {
+    type: DataTypes.DECIMAL(12, 2),
+    allowNull: false,
+    defaultValue: 0
+  },
   Total_Efectivo: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: true
   },
   Total_Tarjeta: {
     type: DataTypes.DECIMAL(10, 2),
+    allowNull: true
+  },
+  Efectivo_Contado: {
+    type: DataTypes.DECIMAL(12, 2),
+    allowNull: true
+  },
+  Diferencia: {
+    type: DataTypes.DECIMAL(12, 2),
     allowNull: true
   },
   Estado: {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import api from "../services/api";
 
 // Isotipos oficiales
 import iconoMorado from "../assets/IconoKiosquitoYa_morado.png";
@@ -49,25 +50,15 @@ const AperturaCaja = () => {
     setError("");
 
     try {
-      const respuesta = await fetch("http://localhost:4000/api/turnos/abrir", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id_Usuario: idCajero,
-          total_efectivo_inicial: Number(montoInicial) || 0,
-        }),
+      // El backend toma el usuario del token: el turno queda a nombre de quien inició sesión
+      const { data } = await api.post("/turnos/abrir", {
+        total_efectivo_inicial: Number(montoInicial) || 0,
       });
-
-      const data = await respuesta.json();
-
-      if (!respuesta.ok) {
-        throw new Error(data.error || "Error al abrir la caja");
-      }
 
       localStorage.setItem("id_turno", data.id_turno);
       navigate("/pos", { replace: true });
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message || "Error al abrir la caja");
     } finally {
       setCargando(false);
     }

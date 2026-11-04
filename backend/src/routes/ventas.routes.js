@@ -14,13 +14,13 @@ const {
   obtenerVentas, 
   obtenerProductosMasVendidos // <-- Importada acá
 } = require('../controllers/ventas.controller');
-const { verificarToken } = require('../middlewares/auth');
+const { verificarToken, soloAdmin } = require('../middlewares/auth');
 
 // Ruta para obtener el reporte de los productos más vendidos
-router.get('/reportes/mas-vendidos', verificarToken, obtenerProductosMasVendidos);
+router.get('/reportes/mas-vendidos', verificarToken, soloAdmin, obtenerProductosMasVendidos);
 
 // Ruta GET para enviar el historial de ventas al panel de Admin
-router.get('/', verificarToken, obtenerVentas);
+router.get('/', verificarToken, soloAdmin, obtenerVentas);
 
 // Ruta POST para recibir el cobro desde la caja del frontend
 router.post('/', verificarToken, registrarVenta);

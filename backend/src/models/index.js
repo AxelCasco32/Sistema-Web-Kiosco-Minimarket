@@ -21,4 +21,7 @@ const Auditoria = require('./Auditoria'); // <-- Solo require('./Auditoria')
 Usuario.belongsTo(Rol, { foreignKey: 'id_Rol' });
 Rol.hasMany(Usuario, { foreignKey: 'id_Rol' });
 
+TurnoCaja.belongsTo(Usuario, { foreignKey: 'id_Usuario' });
+Usuario.hasMany(TurnoCaja, { foreignKey: 'id_Usuario' });
+
 module.exports = { sequelize, Usuario, Rol, Producto, Cliente, Venta, DetalleVenta, TurnoCaja, Auditoria };

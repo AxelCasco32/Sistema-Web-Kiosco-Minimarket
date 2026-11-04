@@ -1,16 +1,55 @@
-const { TurnoCaja, Venta } = require('../models');
+const { TurnoCaja, Venta, Usuario } = require('../models');
+
+const esAdmin = (req) => req.usuario?.rol_nombre === 'Admin';
+
+// Un cajero solo puede operar sobre sus propios turnos; el Admin sobre cualquiera.
+const puedeOperarTurno = (req, turno) =>
+  esAdmin(req) || Number(turno.id_Usuario) === Number(req.usuario?.id_Usuario);
+
+// Suma las ventas del turno separando efectivo de medios electrónicos.
+async function calcularTotales(turno) {
+  const fondoInicial = Number(turno.Fondo_Inicial || 0);
+  const ventas = await Venta.findAll({ where: { id_turno: turno.idturnos_caja } });
+
+  let ventasEfectivo = 0;
+  let totalTarjeta = 0;
+
+  ventas.forEach((venta) => {
+    const monto = Number(venta.Total_Venta || 0);
+    const metodo = String(venta.Metodo_Pago || '').toLowerCase().trim();
+
+    if (metodo === 'efectivo') {
+      ventasEfectivo += monto;
+    } else {
+      totalTarjeta += monto;
+    }
+  });
+
+  return {
+    fondoInicial,
+    ventasEfectivo,
+    // Total físico esperado en el cajón = Fondo inicial + Ventas en efectivo
+    totalEfectivo: fondoInicial + ventasEfectivo,
+    totalTarjeta,
+    cantidadVentas: ventas.length,
+  };
+}
 
 const abrirTurno = async (req, res) => {
   try {
-    const { id_Usuario, total_efectivo_inicial } = req.body;
-
-    // Tomamos el fondo enviado por el usuario, o 0 si no ingresó nada
+    const { total_efectivo_inicial } = req.body;
     const fondoInicial = Number(total_efectivo_inicial) || 0;
 
+    if (fondoInicial < 0) {
+      return res.status(400).json({ error: 'El fondo inicial no puede ser negativo' });
+    }
+
+    // El turno queda a nombre del usuario logueado (sale del token, no del body)
     const nuevoTurno = await TurnoCaja.create({
-      id_Usuario: id_Usuario || 1,
+      id_Usuario: req.usuario.id_Usuario,
       Hora_Apertura: new Date(),
-      Total_Efectivo: fondoInicial, // <-- Guarda el dinero con el que arranca la caja
+      Fondo_Inicial: fondoInicial,
+      Total_Efectivo: fondoInicial,
       Total_Tarjeta: 0,
       Estado: 'Abierto',
     });
@@ -21,74 +60,82 @@ const abrirTurno = async (req, res) => {
       fondoInicial,
     });
   } catch (error) {
-    console.error("Error al abrir caja:", error);
+    console.error('Error al abrir caja:', error);
     res.status(500).json({ error: 'Error interno al abrir la caja' });
   }
 };
 
 const obtenerResumen = async (req, res) => {
   try {
-    const { id } = req.params;
+    const turno = await TurnoCaja.findByPk(req.params.id);
+    if (!turno) return res.status(404).json({ error: 'Turno no encontrado' });
+    if (!puedeOperarTurno(req, turno)) {
+      return res.status(403).json({ error: 'No tenés permiso sobre este turno' });
+    }
 
-    // 1. Buscamos el turno para obtener el fondo inicial de apertura
-    const turno = await TurnoCaja.findByPk(id);
-    const fondoInicial = Number(turno?.Total_Efectivo || 0);
-
-    // 2. Buscamos las ventas registradas durante este turno
-    const ventas = await Venta.findAll({ where: { id_turno: id } });
-
-    let ventasEfectivo = 0;
-    let totalTarjeta = 0;
-
-    ventas.forEach((venta) => {
-      const monto = Number(venta.Total_Venta || 0);
-      const metodo = String(venta.Metodo_Pago || venta.metodo_pago || '').toLowerCase().trim();
-
-      if (metodo === 'efectivo') {
-        ventasEfectivo += monto;
-      } else {
-        totalTarjeta += monto;
-      }
-    });
-
-    // Total físico en el cajón = Fondo inicial + Ventas en efectivo
-    const totalEfectivo = fondoInicial + ventasEfectivo;
-
-    res.status(200).json({
-      fondoInicial,
-      ventasEfectivo,
-      totalEfectivo,
-      totalTarjeta,
-      cantidadVentas: ventas.length,
-    });
+    const totales = await calcularTotales(turno);
+    res.status(200).json({ ...totales, estado: turno.Estado });
   } catch (error) {
-    console.error("Error al obtener resumen:", error);
+    console.error('Error al obtener resumen:', error);
     res.status(500).json({ error: 'Error interno al calcular el resumen' });
   }
 };
 
 const cerrarTurno = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { totalEfectivo, totalTarjeta } = req.body;
+    const turno = await TurnoCaja.findByPk(req.params.id);
+    if (!turno) return res.status(404).json({ error: 'Turno no encontrado' });
+    if (!puedeOperarTurno(req, turno)) {
+      return res.status(403).json({ error: 'No tenés permiso sobre este turno' });
+    }
+    if (turno.Estado === 'Cerrado') {
+      return res.status(409).json({ error: 'Este turno ya fue cerrado' });
+    }
 
-    await TurnoCaja.update(
-      {
-        Hora_Cierre: new Date(),
-        Total_Efectivo: Number(totalEfectivo) || 0,
-        Total_Tarjeta: Number(totalTarjeta) || 0,
-        Estado: 'Cerrado',
-      },
-      {
-        where: { idturnos_caja: id },
-      }
-    );
+    const { efectivo_contado } = req.body;
+    const efectivoContado = Number(efectivo_contado);
+    if (efectivo_contado === undefined || efectivo_contado === '' || Number.isNaN(efectivoContado) || efectivoContado < 0) {
+      return res.status(400).json({ error: 'Ingresá el efectivo contado en el cajón' });
+    }
 
-    res.status(200).json({ mensaje: 'Caja cerrada correctamente' });
+    // Los totales se recalculan acá: no se confía en lo que manda el navegador
+    const totales = await calcularTotales(turno);
+    const diferencia = Number((efectivoContado - totales.totalEfectivo).toFixed(2));
+
+    await turno.update({
+      Hora_Cierre: new Date(),
+      Total_Efectivo: totales.totalEfectivo,
+      Total_Tarjeta: totales.totalTarjeta,
+      Efectivo_Contado: efectivoContado,
+      Diferencia: diferencia, // negativo = faltante, positivo = sobrante
+      Estado: 'Cerrado',
+    });
+
+    res.status(200).json({
+      mensaje: 'Caja cerrada correctamente',
+      ...totales,
+      efectivoContado,
+      diferencia,
+    });
   } catch (error) {
-    console.error("Error al cerrar caja:", error);
+    console.error('Error al cerrar caja:', error);
     res.status(500).json({ error: 'Error interno al cerrar la caja' });
   }
 };
 
-module.exports = { abrirTurno, obtenerResumen, cerrarTurno };
+// GET /api/turnos (solo Admin) - historial de cierres con responsable y diferencias
+const listarTurnos = async (req, res) => {
+  try {
+    const turnos = await TurnoCaja.findAll({
+      include: { model: Usuario, attributes: ['Nombre', 'Apellido', 'Usuario'] },
+      order: [['Hora_Apertura', 'DESC']],
+      limit: 200,
+    });
+    res.status(200).json(turnos);
+  } catch (error) {
+    console.error('Error al listar turnos:', error);
+    res.status(500).json({ error: 'Error interno al listar los turnos' });
+  }
+};
+
+module.exports = { abrirTurno, obtenerResumen, cerrarTurno, listarTurnos, puedeOperarTurno };

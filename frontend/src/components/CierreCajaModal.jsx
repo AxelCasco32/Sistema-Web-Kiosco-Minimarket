@@ -11,6 +11,7 @@ export default function CierreCajaModal({ idTurno, onClose, onCierreExitoso }) {
   });
   const [cargando, setCargando] = useState(true);
   const [procesando, setProcesando] = useState(false);
+  const [efectivoContado, setEfectivoContado] = useState("");
 
   useEffect(() => {
     const cargarResumen = async () => {
@@ -32,19 +33,47 @@ export default function CierreCajaModal({ idTurno, onClose, onCierreExitoso }) {
     cargarResumen();
   }, [idTurno]);
 
+  const contadoIngresado = efectivoContado.trim() !== "";
+  const contadoNum = Number(efectivoContado);
+  const contadoValido = contadoIngresado && !Number.isNaN(contadoNum) && contadoNum >= 0;
+  const diferencia = contadoValido ? contadoNum - resumen.totalEfectivo : 0;
+
+  const formatearDiferencia = (valor) => {
+    if (Math.abs(valor) < 0.005) return "Caja exacta ($0.00)";
+    return valor < 0
+      ? `Faltante: -$${Math.abs(valor).toFixed(2)}`
+      : `Sobrante: +$${valor.toFixed(2)}`;
+  };
+
   const confirmarCierre = async () => {
+    if (!contadoValido) {
+      alert("Contá el efectivo del cajón e ingresá el monto antes de cerrar.");
+      return;
+    }
+    if (diferencia < -0.005) {
+      const seguir = window.confirm(
+        `Hay un faltante de $${Math.abs(diferencia).toFixed(2)}.\n` +
+        `Quedará registrado a nombre del usuario de este turno.\n\n¿Confirmás el cierre?`
+      );
+      if (!seguir) return;
+    }
+
     setProcesando(true);
     try {
-      await api.put(`/turnos/cerrar/${idTurno}`, {
-        totalEfectivo: resumen.totalEfectivo,
-        totalTarjeta: resumen.tarjeta,
+      const respuesta = await api.put(`/turnos/cerrar/${idTurno}`, {
+        efectivo_contado: contadoNum,
       });
-
       localStorage.removeItem("id_turno");
+      alert(
+        `Caja cerrada.\n\n` +
+        `Efectivo esperado: $${Number(respuesta.data.totalEfectivo).toFixed(2)}\n` +
+        `Efectivo contado: $${Number(respuesta.data.efectivoContado).toFixed(2)}\n` +
+        `${formatearDiferencia(Number(respuesta.data.diferencia))}`
+      );
       onCierreExitoso();
     } catch (error) {
       console.error("Error al cerrar el turno", error);
-      alert("Hubo un error al cerrar la caja.");
+      alert(error.response?.data?.error || "Hubo un error al cerrar la caja.");
       setProcesando(false);
     }
   };
@@ -138,6 +167,35 @@ export default function CierreCajaModal({ idTurno, onClose, onCierreExitoso }) {
                 </span>
               </div>
 
+              {/* ARQUEO: EFECTIVO CONTADO FÍSICAMENTE */}
+              <div style={styles.arqueoBox}>
+                <label htmlFor="efectivo-contado" style={styles.arqueoLabel}>
+                  Efectivo contado en el cajón
+                </label>
+                <input
+                  id="efectivo-contado"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  autoFocus
+                  placeholder="Ej: 45000"
+                  value={efectivoContado}
+                  onChange={(e) => setEfectivoContado(e.target.value)}
+                  style={styles.arqueoInput}
+                />
+                {contadoValido && (
+                  <strong
+                    style={{
+                      ...styles.arqueoDiferencia,
+                      color: diferencia < -0.005 ? "#c62828" : diferencia > 0.005 ? "#1565c0" : "#2e7d32",
+                    }}
+                  >
+                    {formatearDiferencia(diferencia)}
+                  </strong>
+                )}
+              </div>
+
               <div style={styles.warningBox}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                   <circle cx="12" cy="12" r="10"></circle>
@@ -162,11 +220,11 @@ export default function CierreCajaModal({ idTurno, onClose, onCierreExitoso }) {
                 <button
                   type="button"
                   onClick={confirmarCierre}
-                  disabled={procesando}
+                  disabled={procesando || !contadoValido}
                   style={{
                     ...styles.btnConfirm,
-                    opacity: procesando ? 0.75 : 1,
-                    cursor: procesando ? "not-allowed" : "pointer",
+                    opacity: procesando || !contadoValido ? 0.6 : 1,
+                    cursor: procesando || !contadoValido ? "not-allowed" : "pointer",
                   }}
                 >
                   {procesando ? "Guardando cierre..." : "Confirmar Cierre"}
@@ -319,6 +377,32 @@ const styles = {
     fontSize: "1.85rem",
     fontWeight: "900",
     color: "#261d60",
+  },
+  arqueoBox: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    padding: "14px",
+    borderRadius: "10px",
+    border: "1px solid #dcdde1",
+    backgroundColor: "#fafbfc",
+  },
+  arqueoLabel: {
+    fontWeight: "bold",
+    color: "#261d60",
+    fontSize: "0.95em",
+  },
+  arqueoInput: {
+    padding: "10px 12px",
+    fontSize: "1.1em",
+    borderRadius: "8px",
+    border: "1px solid #c8c9d6",
+    outline: "none",
+    width: "100%",
+    boxSizing: "border-box",
+  },
+  arqueoDiferencia: {
+    fontSize: "0.95em",
   },
   warningBox: {
     display: "flex",

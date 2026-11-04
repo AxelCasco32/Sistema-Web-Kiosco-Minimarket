@@ -466,6 +466,25 @@ export default function AdminDashboard() {
                 <span style={{ color: "#8c98a4", fontSize: "0.8em" }}>Control de cambios</span>
               </div>
             </Link>
+
+            {/* 6. Cierres de caja */}
+            <Link
+              to="/cierres-caja"
+              style={actionCardStyle}
+              onMouseEnter={handleCardHover}
+              onMouseLeave={handleCardLeave}
+            >
+              <div style={iconBadgeStyle}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#261d60" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+                  <circle cx="12" cy="12" r="2"></circle>
+                </svg>
+              </div>
+              <div>
+                <strong style={{ color: "#2c3e50", fontSize: "0.95em", display: "block" }}>Cierres de caja</strong>
+                <span style={{ color: "#8c98a4", fontSize: "0.8em" }}>Arqueos y faltantes</span>
+              </div>
+            </Link>
           </div>
         </div>
 
