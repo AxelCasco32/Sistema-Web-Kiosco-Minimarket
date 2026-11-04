@@ -31,7 +31,7 @@ async function login(req, res) {
         rol_nombre: usuarioEncontrado.Rol.Nombre,
       },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      { expiresIn: (process.env.JWT_EXPIRES_IN || '').trim() || '8h' }
     );
 
     res.json({
