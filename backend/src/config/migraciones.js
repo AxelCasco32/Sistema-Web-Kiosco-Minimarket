@@ -53,9 +53,34 @@ async function aplicarMigracion002() {
   }
 }
 
+// 003: email obligatorio para usuarios nuevos + código de recuperación por correo
+async function aplicarMigracion003() {
+  const cols = await columnasDe('usuarios');
+  if (!cols.includes('Email')) {
+    await sequelize.query(
+      "ALTER TABLE `usuarios` ADD COLUMN `Email` VARCHAR(150) DEFAULT NULL AFTER `Usuario`, ADD UNIQUE KEY `uq_usuarios_email` (`Email`)"
+    );
+  }
+  if (!cols.includes('codigo_recuperacion_expira')) {
+    await sequelize.query(
+      "ALTER TABLE `usuarios` ADD COLUMN `codigo_recuperacion_expira` DATETIME DEFAULT NULL AFTER `codigo_recuperacion_hash`"
+    );
+  }
+  if (!cols.includes('codigo_recuperacion_intentos')) {
+    await sequelize.query(
+      "ALTER TABLE `usuarios` ADD COLUMN `codigo_recuperacion_intentos` INT NOT NULL DEFAULT 0 AFTER `codigo_recuperacion_expira`"
+    );
+  }
+  // Los códigos generados con el sistema anterior (sin vencimiento) quedan anulados
+  await sequelize.query(
+    "UPDATE `usuarios` SET `codigo_recuperacion_hash` = NULL WHERE `codigo_recuperacion_hash` IS NOT NULL AND `codigo_recuperacion_expira` IS NULL"
+  );
+}
+
 async function aplicarMigraciones() {
   await aplicarMigracion001();
   await aplicarMigracion002();
+  await aplicarMigracion003();
 }
 
 module.exports = { aplicarMigraciones };

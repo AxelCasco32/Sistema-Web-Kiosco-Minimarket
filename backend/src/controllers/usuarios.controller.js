@@ -1,11 +1,28 @@
 const bcrypt = require('bcryptjs');
+const { Op } = require('sequelize');
 const { Usuario, Rol } = require('../models');
+
+const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizarEmail(email) {
+  return String(email || '').trim().toLowerCase();
+}
+
+// Devuelve un mensaje de error o null si el email es válido y no está en uso
+async function validarEmail(email, idExcluir = null) {
+  if (!email) return 'El email es obligatorio';
+  if (email.length > 150 || !REGEX_EMAIL.test(email)) return 'El email no es válido';
+  const where = { Email: email };
+  if (idExcluir) where.id_Usuario = { [Op.ne]: idExcluir };
+  const existe = await Usuario.findOne({ where });
+  return existe ? 'Ese email ya está registrado en otro usuario' : null;
+}
 
 // GET /api/usuarios - listar todos los usuarios (sin exponer el hash)
 async function listarUsuarios(req, res) {
   try {
     const usuarios = await Usuario.findAll({
-      attributes: ['id_Usuario', 'id_Rol', 'Nombre', 'Apellido', 'Usuario', 'Activo', 'createdAt'],
+      attributes: ['id_Usuario', 'id_Rol', 'Nombre', 'Apellido', 'Usuario', 'Email', 'Activo', 'createdAt'],
       include: { model: Rol, attributes: ['Nombre'] },
       order: [['id_Usuario', 'ASC']],
     });
@@ -31,9 +48,14 @@ async function listarRoles(req, res) {
 async function crearUsuario(req, res) {
   try {
     const { id_Rol, Nombre, Apellido, Usuario: nombreUsuario, password } = req.body;
+    const email = normalizarEmail(req.body.Email);
 
-    if (!id_Rol || !Nombre || !Apellido || !nombreUsuario || !password) {
-      return res.status(400).json({ mensaje: 'Todos los campos son obligatorios' });
+    if (!id_Rol || !Nombre || !Apellido || !nombreUsuario || !password || !email) {
+      return res.status(400).json({ mensaje: 'Todos los campos son obligatorios (incluido el email)' });
+    }
+    const errorEmail = await validarEmail(email);
+    if (errorEmail) {
+      return res.status(400).json({ mensaje: errorEmail });
     }
     if (password.length < 6) {
       return res.status(400).json({ mensaje: 'La contraseña debe tener al menos 6 caracteres' });
@@ -51,6 +73,7 @@ async function crearUsuario(req, res) {
       Nombre,
       Apellido,
       Usuario: nombreUsuario,
+      Email: email,
       password_hash,
       Activo: true,
     });
@@ -60,6 +83,7 @@ async function crearUsuario(req, res) {
       Nombre: nuevoUsuario.Nombre,
       Apellido: nuevoUsuario.Apellido,
       Usuario: nuevoUsuario.Usuario,
+      Email: nuevoUsuario.Email,
       id_Rol: nuevoUsuario.id_Rol,
     });
   } catch (error) {
@@ -77,6 +101,17 @@ async function actualizarUsuario(req, res) {
     const usuario = await Usuario.findByPk(id);
     if (!usuario) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // El email es obligatorio: si el usuario todavía no tiene uno (usuarios
+    // creados antes de este cambio), hay que cargarlo al editarlo.
+    if (req.body.Email !== undefined || !usuario.Email) {
+      const email = normalizarEmail(req.body.Email);
+      const errorEmail = await validarEmail(email, usuario.id_Usuario);
+      if (errorEmail) {
+        return res.status(400).json({ error: errorEmail });
+      }
+      usuario.Email = email;
     }
 
     if (Nombre) usuario.Nombre = Nombre;
