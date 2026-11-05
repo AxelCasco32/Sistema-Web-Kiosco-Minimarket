@@ -1,0 +1,31 @@
+/* Ajustes de SweetAlert2 para KiosquitoYa */
+
+/* Por encima de los modales propios del sistema (z-index 2000) */
+.swal2-container {
+  z-index: 5000 !important;
+}
+
+.kiosco-swal {
+  border-radius: 16px !important;
+}
+
+.kiosco-swal .swal2-title {
+  color: #261d60;
+  font-size: 1.35em;
+}
+
+.kiosco-swal .swal2-html-container {
+  color: #475569;
+  font-size: 0.98em;
+  line-height: 1.5;
+}
+
+.kiosco-swal .swal2-styled {
+  border-radius: 8px !important;
+  font-weight: 700;
+}
+
+.kiosco-swal-toast .swal2-title {
+  font-size: 0.95em !important;
+  color: #1e293b;
+}

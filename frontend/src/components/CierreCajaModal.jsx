@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "../services/api";
+import { alertaExito, alertaError, alertaAviso, confirmar, mensajeDeError } from "../utils/alertas";
 
 export default function CierreCajaModal({ idTurno, onClose, onCierreExitoso }) {
   const [resumen, setResumen] = useState({
@@ -47,14 +48,18 @@ export default function CierreCajaModal({ idTurno, onClose, onCierreExitoso }) {
 
   const confirmarCierre = async () => {
     if (!contadoValido) {
-      alert("Contá el efectivo del cajón e ingresá el monto antes de cerrar.");
+      alertaAviso("Falta el arqueo", "Contá el efectivo del cajón e ingresá el monto antes de cerrar.");
       return;
     }
     if (diferencia < -0.005) {
-      const seguir = window.confirm(
-        `Hay un faltante de $${Math.abs(diferencia).toFixed(2)}.\n` +
-        `Quedará registrado a nombre del usuario de este turno.\n\n¿Confirmás el cierre?`
-      );
+      const seguir = await confirmar({
+        titulo: `Faltante de $${Math.abs(diferencia).toFixed(2)}`,
+        texto: "Quedará registrado a nombre del usuario de este turno.\n¿Confirmás el cierre?",
+        textoConfirmar: "Sí, cerrar caja",
+        textoCancelar: "Volver a contar",
+        peligro: true,
+        icono: "warning",
+      });
       if (!seguir) return;
     }
 
@@ -64,8 +69,8 @@ export default function CierreCajaModal({ idTurno, onClose, onCierreExitoso }) {
         efectivo_contado: contadoNum,
       });
       localStorage.removeItem("id_turno");
-      alert(
-        `Caja cerrada.\n\n` +
+      await alertaExito(
+        "Caja cerrada",
         `Efectivo esperado: $${Number(respuesta.data.totalEfectivo).toFixed(2)}\n` +
         `Efectivo contado: $${Number(respuesta.data.efectivoContado).toFixed(2)}\n` +
         `${formatearDiferencia(Number(respuesta.data.diferencia))}`
@@ -73,7 +78,7 @@ export default function CierreCajaModal({ idTurno, onClose, onCierreExitoso }) {
       onCierreExitoso();
     } catch (error) {
       console.error("Error al cerrar el turno", error);
-      alert(error.response?.data?.error || "Hubo un error al cerrar la caja.");
+      alertaError("No se pudo cerrar la caja", mensajeDeError(error, "Hubo un error al cerrar la caja."));
       setProcesando(false);
     }
   };
