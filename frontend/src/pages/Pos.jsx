@@ -7,6 +7,7 @@ import api, { obtenerProductos } from "../services/api";
 import BuscarClienteModal from "../components/BuscarClienteModal";
 import { useNavigate } from "react-router-dom";
 import CierreCajaModal from "../components/CierreCajaModal";
+import { alertaExito, alertaError, alertaAviso, confirmar, avisoRapido, mensajeDeError } from "../utils/alertas";
 
 // Isotipos oficiales de KiosquitoYa
 import iconoMorado from "../assets/IconoKiosquitoYa_morado.png";
@@ -103,7 +104,7 @@ export default function Pos() {
       if (producto) {
         agregarProducto(producto.Cod_barra || producto.idProductos);
       } else {
-        alert("Producto no encontrado en la base de datos");
+        avisoRapido(`Producto no encontrado: ${codigoEscaneado}`, "error");
       }
       e.target.value = "";
     }
@@ -118,25 +119,30 @@ export default function Pos() {
     );
     if (!producto) return;
 
+    // Las validaciones (y sus avisos) van fuera de setCarrito: en desarrollo,
+    // StrictMode ejecuta el updater dos veces y el aviso saldría duplicado.
+    const enCarrito = carrito.find(
+      (p) => (p.Cod_barra || p.idProductos || p.id) === identificador
+    );
+    if (producto.Stock < 1) {
+      avisoRapido(`"${producto.Nombre}" está sin stock`, "warning");
+      return;
+    }
+    if (enCarrito && enCarrito.cantidad >= producto.Stock) {
+      avisoRapido(`No hay más stock de "${producto.Nombre}" (máximo ${producto.Stock})`, "warning");
+      return;
+    }
+
     setCarrito((carritoActual) => {
       const productoExistente = carritoActual.find(
         (p) => (p.Cod_barra || p.idProductos || p.id) === identificador
       );
       if (productoExistente) {
-        if (productoExistente.cantidad >= producto.Stock) {
-          alert(`No hay suficiente stock. Stock máximo: ${producto.Stock}`);
-          return carritoActual;
-        }
         return carritoActual.map((p) =>
           (p.Cod_barra || p.idProductos || p.id) === identificador
-            ? { ...p, cantidad: p.cantidad + 1 }
+            ? { ...p, cantidad: Math.min(p.cantidad + 1, producto.Stock) }
             : p
         );
-      }
-
-      if (producto.Stock < 1) {
-        alert("Este producto está sin stock.");
-        return carritoActual;
       }
       return [...carritoActual, { ...producto, cantidad: 1 }];
     });
@@ -160,7 +166,7 @@ export default function Pos() {
         (p.Cod_barra || p.idProductos || p.id) === identificador
     );
     if (productoBase && cantidad > productoBase.Stock) {
-      alert(`No podés vender más del stock disponible (${productoBase.Stock})`);
+      avisoRapido(`No podés vender más del stock disponible (${productoBase.Stock})`, "warning");
       return;
     }
 
@@ -214,20 +220,23 @@ export default function Pos() {
 
   const cobrar = async () => {
     if (carrito.length === 0) {
-      alert("No hay productos en la venta.");
+      alertaAviso("Carrito vacío", "No hay productos en la venta.");
       return;
     }
 
     if (medioPago === "efectivo") {
       if (valorRecibidoNum < total) {
-        alert("El efectivo recibido es menor al total de la venta.");
+        alertaAviso(
+          "Efectivo insuficiente",
+          `El efectivo recibido ($${valorRecibidoNum.toFixed(2)}) es menor al total de la venta ($${total.toFixed(2)}).`
+        );
         return;
       }
 
       // Validación de efectivo físico para dar el vuelto
       if (vuelto > efectivoEnCaja) {
-        alert(
-          `Sin cambio suficiente en caja.\n\n` +
+        alertaError(
+          "Sin cambio suficiente en caja",
           `Vuelto a entregar: $${vuelto.toFixed(2)}\n` +
           `Efectivo físico disponible: $${efectivoEnCaja.toFixed(2)}\n` +
           `Diferencia faltante: $${(vuelto - efectivoEnCaja).toFixed(2)}\n\n` +
@@ -241,7 +250,7 @@ export default function Pos() {
       (medioPago === "tarjeta" || medioPago === "transferencia") &&
       !numeroComprobante.trim()
     ) {
-      alert("Por favor ingresá el número de comprobante o lote de la operación.");
+      alertaAviso("Falta el comprobante", "Ingresá el número de comprobante o lote de la operación.");
       return;
     }
 
@@ -270,7 +279,12 @@ export default function Pos() {
       };
 
       await api.post("/ventas", datosVenta);
-      alert(`¡Venta procesada con éxito por $${total.toFixed(2)}!\nStock descontado.`);
+      const vueltoEntregado = medioPago === "efectivo" ? Math.max(vuelto, 0) : 0;
+      alertaExito(
+        "¡Venta registrada!",
+        `Total cobrado: $${total.toFixed(2)}` +
+          (vueltoEntregado > 0 ? `\nVuelto a entregar: $${vueltoEntregado.toFixed(2)}` : "")
+      );
 
       // Si fue en efectivo, sumamos el neto al cajón físico
       if (medioPago === "efectivo") {
@@ -284,7 +298,10 @@ export default function Pos() {
       cargarProductos();
     } catch (error) {
       console.error("Error al registrar la venta:", error);
-      alert("Error al procesar la venta. Revisá si el backend está encendido.");
+      alertaError(
+        "No se pudo registrar la venta",
+        mensajeDeError(error, "Revisá que el backend esté encendido.")
+      );
     } finally {
       setProcesandoCobro(false);
     }
@@ -1190,8 +1207,16 @@ export default function Pos() {
           <div style={{ display: "flex", gap: "15px" }}>
             <button
               className="btn-cancelar"
-              onClick={() => {
-                if (window.confirm("¿Estás seguro de cancelar esta venta?")) {
+              onClick={async () => {
+                const ok = await confirmar({
+                  titulo: "¿Cancelar esta venta?",
+                  texto: "Se vacía el carrito y se descartan los datos de pago.",
+                  textoConfirmar: "Sí, cancelar venta",
+                  textoCancelar: "Volver",
+                  peligro: true,
+                  icono: "warning",
+                });
+                if (ok) {
                   setCarrito([]);
                   setEfectivoRecibido("");
                   setNumeroComprobante("");

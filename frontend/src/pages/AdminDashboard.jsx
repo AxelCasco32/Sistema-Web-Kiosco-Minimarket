@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import { Link } from "react-router-dom";
+import { alertaExito, alertaError, alertaAviso, confirmar, mensajeDeError } from "../utils/alertas";
 import "../styles/common.css";
 import "../styles/pos.css"; 
 
@@ -83,7 +84,7 @@ export default function AdminDashboard() {
           password: password,
           id_Rol: Number(idRol)
         });
-        alert("¡Usuario modificado con éxito!");
+        alertaExito("Usuario modificado", `Se guardaron los cambios de "${user}".`);
       } else {
         await api.post("/usuarios", {
           Nombre: nombre,
@@ -93,13 +94,13 @@ export default function AdminDashboard() {
           password: password,
           id_Rol: Number(idRol)
         });
-        alert("¡Usuario creado con éxito!");
+        alertaExito("Usuario creado", `"${user}" ya puede iniciar sesión.`);
       }
 
       limpiarFormulario();
       cargarDatos(); 
     } catch (error) {
-      alert(error.response?.data?.error || error.response?.data?.mensaje || "Error al procesar la solicitud.");
+      alertaError("No se pudo guardar", mensajeDeError(error, "Error al procesar la solicitud."));
     }
   };
 
@@ -108,20 +109,26 @@ export default function AdminDashboard() {
 
     const idLogueado = usuarioActual?.id || usuarioActual?.id_Usuario;
     if (String(idSeleccionado) === String(idLogueado)) {
-      alert("No podés eliminar tu propia cuenta mientras estás logueado.");
+      alertaAviso("Acción no permitida", "No podés eliminar tu propia cuenta mientras estás logueado.");
       return;
     }
 
-    const confirmar = window.confirm(`¿Estás seguro de que querés eliminar al usuario "${user}"? Esta acción no se puede deshacer.`);
-    if (!confirmar) return;
+    const ok = await confirmar({
+      titulo: "¿Eliminar usuario?",
+      texto: `Vas a eliminar a "${user}". Esta acción no se puede deshacer.`,
+      textoConfirmar: "Sí, eliminar",
+      peligro: true,
+      icono: "warning",
+    });
+    if (!ok) return;
 
     try {
       await api.delete(`/usuarios/${idSeleccionado}`);
-      alert("Usuario eliminado correctamente.");
+      alertaExito("Usuario eliminado", `"${user}" fue eliminado correctamente.`);
       limpiarFormulario();
       cargarDatos();
     } catch (error) {
-      alert(error.response?.data?.error || "Error al eliminar el usuario.");
+      alertaError("No se pudo eliminar", mensajeDeError(error, "Error al eliminar el usuario."));
     }
   };
 
