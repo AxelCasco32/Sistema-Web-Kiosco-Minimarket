@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import { Link } from "react-router-dom";
-import CodigoRecuperacionModal from "../components/CodigoRecuperacionModal";
 import "../styles/common.css";
 import "../styles/pos.css"; 
 
@@ -18,7 +17,6 @@ export default function AdminDashboard() {
   
   // Estado para alternar la variante del isotipo al hacer clic
   const [mostrarIconoBlanco, setMostrarIconoBlanco] = useState(false);
-  const [mostrarCodigoRecuperacion, setMostrarCodigoRecuperacion] = useState(false);
 
   // Estado para saber si estamos editando
   const [idSeleccionado, setIdSeleccionado] = useState(null);
@@ -26,6 +24,7 @@ export default function AdminDashboard() {
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
   const [user, setUser] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [idRol, setIdRol] = useState(1);
 
@@ -57,6 +56,7 @@ export default function AdminDashboard() {
     setNombre("");
     setApellido("");
     setUser("");
+    setEmail("");
     setPassword("");
     setIdRol(1);
   };
@@ -66,6 +66,7 @@ export default function AdminDashboard() {
     setNombre(u.Nombre || "");
     setApellido(u.Apellido || "");
     setUser(u.Usuario || "");
+    setEmail(u.Email || "");
     setPassword("");
     setIdRol(u.id_Rol || u.Rol?.id_Rol || 1);
   };
@@ -78,6 +79,7 @@ export default function AdminDashboard() {
           Nombre: nombre,
           Apellido: apellido,
           Usuario: user,
+          Email: email.trim(),
           password: password,
           id_Rol: Number(idRol)
         });
@@ -87,6 +89,7 @@ export default function AdminDashboard() {
           Nombre: nombre,
           Apellido: apellido,
           Usuario: user,
+          Email: email.trim(),
           password: password,
           id_Rol: Number(idRol)
         });
@@ -96,7 +99,7 @@ export default function AdminDashboard() {
       limpiarFormulario();
       cargarDatos(); 
     } catch (error) {
-      alert(error.response?.data?.error || "Error al procesar la solicitud.");
+      alert(error.response?.data?.error || error.response?.data?.mensaje || "Error al procesar la solicitud.");
     }
   };
 
@@ -260,6 +263,17 @@ export default function AdminDashboard() {
               <input className="input input-interactivo" style={styles.inputOverride} type="text" placeholder="Nombre" value={nombre} onChange={e => setNombre(e.target.value)} required />
               <input className="input input-interactivo" style={styles.inputOverride} type="text" placeholder="Apellido" value={apellido} onChange={e => setApellido(e.target.value)} required />
               <input className="input input-interactivo" style={styles.inputOverride} type="text" placeholder="Usuario" value={user} onChange={e => setUser(e.target.value)} required />
+              <input
+                className="input input-interactivo"
+                style={styles.inputOverride}
+                type="email"
+                placeholder="Email (para recuperar la contraseña)"
+                autoComplete="email"
+                maxLength={150}
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+              />
               <input 
                 className="input input-interactivo" 
                 style={styles.inputOverride} 
@@ -342,6 +356,11 @@ export default function AdminDashboard() {
                       <div>
                         <strong style={{ fontSize: '1.05em', color: seleccionado ? "#261d60" : "#2c3e50", display: "block" }}>{u.Nombre} {u.Apellido}</strong> 
                         <p style={{ margin: '2px 0 0 0', color: '#7f8c8d', fontSize: '0.85em' }}>Usuario: {u.Usuario}</p>
+                        {u.Email ? (
+                          <p style={{ margin: '2px 0 0 0', color: '#7f8c8d', fontSize: '0.85em', wordBreak: 'break-all' }}>{u.Email}</p>
+                        ) : (
+                          <p style={{ margin: '2px 0 0 0', color: '#c62828', fontSize: '0.82em', fontWeight: 'bold' }}>Sin email: editalo para poder recuperar la contraseña</p>
+                        )}
                       </div>
                     </div>
                     
@@ -487,28 +506,6 @@ export default function AdminDashboard() {
                 <span style={{ color: "#8c98a4", fontSize: "0.8em" }}>Arqueos y faltantes</span>
               </div>
             </Link>
-
-            {/* 7. Código de recuperación de contraseña */}
-            <button
-              type="button"
-              onClick={() => setMostrarCodigoRecuperacion(true)}
-              style={{ ...actionCardStyle, font: "inherit", textAlign: "left", width: "100%" }}
-              onMouseEnter={handleCardHover}
-              onMouseLeave={handleCardLeave}
-            >
-              <div style={iconBadgeStyle}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#261d60" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="7.5" cy="15.5" r="4.5"></circle>
-                  <path d="M10.7 12.3 21 2"></path>
-                  <path d="m16 7 3 3"></path>
-                  <path d="m19 4 2 2"></path>
-                </svg>
-              </div>
-              <div>
-                <strong style={{ color: "#2c3e50", fontSize: "0.95em", display: "block" }}>Recuperación</strong>
-                <span style={{ color: "#8c98a4", fontSize: "0.8em" }}>Código por si olvidás la clave</span>
-              </div>
-            </button>
           </div>
         </div>
 
@@ -812,10 +809,6 @@ export default function AdminDashboard() {
         </section>
 
       </div>
-
-      {mostrarCodigoRecuperacion && (
-        <CodigoRecuperacionModal onClose={() => setMostrarCodigoRecuperacion(false)} />
-      )}
     </div>
   );
 }

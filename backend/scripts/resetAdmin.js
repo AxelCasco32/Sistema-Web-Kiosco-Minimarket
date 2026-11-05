@@ -3,7 +3,7 @@
 //
 //   node scripts/resetAdmin.js                     -> lista los usuarios Admin
 //   node scripts/resetAdmin.js <usuario> <clave>   -> cambia la clave de ese usuario (y lo reactiva)
-//   node scripts/resetAdmin.js --crear <usuario> <clave> -> crea un Admin nuevo
+//   node scripts/resetAdmin.js --crear <usuario> <clave> [email] -> crea un Admin nuevo
 //
 // Además, aplica las migraciones 001 (arqueo de caja / transferencia) y
 // 002 (código de recuperación) si todavía faltan.
@@ -22,12 +22,12 @@ async function main() {
   console.log('Migraciones: OK');
 
   if (args[0] === '--crear') {
-    const [usuario, clave] = args.slice(1);
-    if (!usuario || !clave) throw new Error('Uso: node scripts/resetAdmin.js --crear <usuario> <clave>');
+    const [usuario, clave, email] = args.slice(1);
+    if (!usuario || !clave) throw new Error('Uso: node scripts/resetAdmin.js --crear <usuario> <clave> [email]');
     const hash = await bcrypt.hash(clave, 10);
     await sequelize.query(
-      'INSERT INTO usuarios (id_Rol, Nombre, Apellido, Usuario, password_hash, Activo) VALUES (1, ?, ?, ?, ?, 1)',
-      { replacements: ['Admin', 'Kiosco', usuario, hash] }
+      'INSERT INTO usuarios (id_Rol, Nombre, Apellido, Usuario, Email, password_hash, Activo) VALUES (1, ?, ?, ?, ?, ?, 1)',
+      { replacements: ['Admin', 'Kiosco', usuario, email ? email.trim().toLowerCase() : null, hash] }
     );
     console.log(`Admin "${usuario}" creado.`);
   } else if (args.length >= 2) {
@@ -45,12 +45,14 @@ async function main() {
   }
 
   const [admins] = await sequelize.query(
-    'SELECT u.Usuario, u.Nombre, u.Apellido, u.Activo FROM usuarios u JOIN roles r ON r.id_Rol = u.id_Rol WHERE r.Nombre = ?',
+    'SELECT u.Usuario, u.Nombre, u.Apellido, u.Email, u.Activo FROM usuarios u JOIN roles r ON r.id_Rol = u.id_Rol WHERE r.Nombre = ?',
     { replacements: ['Admin'] }
   );
   console.log('\nUsuarios Admin:');
   if (!admins.length) console.log('  (ninguno) -> creá uno con: node scripts/resetAdmin.js --crear admin admin123');
-  admins.forEach((a) => console.log(`  - ${a.Usuario} (${a.Nombre} ${a.Apellido})${a.Activo ? '' : ' [inactivo]'}`));
+  admins.forEach((a) =>
+    console.log(`  - ${a.Usuario} (${a.Nombre} ${a.Apellido}) ${a.Email || '[sin email]'}${a.Activo ? '' : ' [inactivo]'}`)
+  );
 }
 
 main()

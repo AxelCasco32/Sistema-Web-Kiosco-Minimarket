@@ -42,19 +42,24 @@ CREATE TABLE `usuarios` (
   `Nombre` VARCHAR(45) NOT NULL,
   `Apellido` VARCHAR(45) NOT NULL,
   `Usuario` VARCHAR(45) NOT NULL,
+  `Email` VARCHAR(150) DEFAULT NULL,
   `password_hash` VARCHAR(255) NOT NULL,
   `Activo` TINYINT(1) NOT NULL DEFAULT 1,
   `codigo_recuperacion_hash` VARCHAR(255) DEFAULT NULL,
+  `codigo_recuperacion_expira` DATETIME DEFAULT NULL,
+  `codigo_recuperacion_intentos` INT NOT NULL DEFAULT 0,
   `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_Usuario`),
   UNIQUE KEY `uq_usuarios_usuario` (`Usuario`),
+  UNIQUE KEY `uq_usuarios_email` (`Email`),
   KEY `fk_usuario_rol_idx` (`id_Rol`),
   CONSTRAINT `fk_usuario_rol` FOREIGN KEY (`id_Rol`) REFERENCES `roles` (`id_Rol`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Usuario administrador inicial (usuario: admin / contraseña: admin123).
--- Cambiar la contraseña desde el panel después del primer ingreso.
+-- Cambiar la contraseña y cargarle un email desde el panel después del
+-- primer ingreso (sin email no puede recuperar la contraseña por correo).
 INSERT INTO `usuarios` (`id_Rol`, `Nombre`, `Apellido`, `Usuario`, `password_hash`, `Activo`)
 VALUES (1, 'Admin', 'Kiosco', 'admin', '$2a$10$zV5pCek/wZuXcQZvWLVl2OHWb31kIhbKLimCcDZavaHQfUHo/ydNq', 1);
 

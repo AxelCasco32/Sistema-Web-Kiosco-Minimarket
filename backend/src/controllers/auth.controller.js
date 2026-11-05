@@ -1,7 +1,9 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { Op } = require('sequelize');
 const { Usuario, Rol } = require('../models');
+const { enviarEmail, emailCodigoRecuperacion } = require('../utils/enviarEmail');
 
 async function login(req, res) {
   try {
@@ -51,155 +53,163 @@ async function login(req, res) {
 }
 
 // =====================================================================
-// RECUPERACIÓN DE CONTRASEÑA DEL ADMIN (código de recuperación)
+// RECUPERACIÓN DE CONTRASEÑA POR CORREO
 // ---------------------------------------------------------------------
-// El Admin genera desde su panel un código de un solo uso y lo guarda en un
-// lugar seguro (papel, celular). Si pierde la contraseña, la restablece desde
-// "¿Olvidaste tu contraseña?" con su usuario + ese código. En la base solo se
-// guarda el hash del código, igual que con las contraseñas.
-// Los cajeros no usan este flujo: el Admin les resetea la clave desde el panel.
+// 1) POST /api/auth/recuperar/solicitar   { identificador }  (usuario o email)
+//    Si el usuario existe, está activo y tiene email, se le envía un código
+//    de 6 dígitos que vence en 15 minutos. La respuesta es siempre la misma
+//    para no revelar qué usuarios o correos existen.
+// 2) POST /api/auth/recuperar/restablecer { identificador, codigo, nuevaPassword }
+//    Valida el código (máx. 5 intentos) y cambia la contraseña.
+// En la base solo se guarda el hash del código, igual que las contraseñas.
 // =====================================================================
 
-// Sin 0/O, 1/I/L para que no se confundan al copiarlo a mano
-const ALFABETO_CODIGO = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const MINUTOS_VALIDEZ = 15;
+const MAX_INTENTOS_CODIGO = 5;      // intentos por código antes de anularlo
+const ESPERA_REENVIO_MS = 60 * 1000; // no reenviar más de un correo por minuto
 
-function generarCodigoPlano() {
-  let codigo = '';
-  for (let i = 0; i < 16; i++) {
-    codigo += ALFABETO_CODIGO[crypto.randomInt(ALFABETO_CODIGO.length)];
-  }
-  return codigo.match(/.{4}/g).join('-'); // XXXX-XXXX-XXXX-XXXX
-}
-
-function normalizarCodigo(codigo) {
-  return String(codigo || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-}
-
-// Límite simple de intentos en memoria: 5 intentos fallidos cada 15 minutos
-// por usuario + IP, para que no se pueda adivinar el código por fuerza bruta.
-const MAX_INTENTOS = 5;
+// Límite por IP (en memoria) para frenar abusos: 10 pedidos cada 15 minutos
+const MAX_PEDIDOS_IP = 10;
 const VENTANA_MS = 15 * 60 * 1000;
-const intentosFallidos = new Map();
+const pedidosPorIp = new Map();
 
-function claveIntentos(req, usuario) {
-  return `${String(usuario || '').toLowerCase()}|${req.ip}`;
-}
-
-function estaBloqueado(clave) {
-  const registro = intentosFallidos.get(clave);
-  if (!registro) return false;
-  if (Date.now() - registro.desde > VENTANA_MS) {
-    intentosFallidos.delete(clave);
+function superaLimiteIp(req, tipo) {
+  const clave = `${tipo}|${req.ip}`;
+  const ahora = Date.now();
+  const registro = pedidosPorIp.get(clave);
+  if (!registro || ahora - registro.desde > VENTANA_MS) {
+    pedidosPorIp.set(clave, { cantidad: 1, desde: ahora });
     return false;
   }
-  return registro.cantidad >= MAX_INTENTOS;
+  registro.cantidad += 1;
+  return registro.cantidad > MAX_PEDIDOS_IP;
 }
 
-function registrarFallo(clave) {
-  const registro = intentosFallidos.get(clave);
-  if (!registro || Date.now() - registro.desde > VENTANA_MS) {
-    intentosFallidos.set(clave, { cantidad: 1, desde: Date.now() });
-  } else {
-    registro.cantidad += 1;
+function generarCodigo() {
+  return String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+}
+
+async function buscarPorIdentificador(identificador) {
+  const valor = String(identificador || '').trim();
+  if (!valor) return null;
+  return Usuario.findOne({
+    where: {
+      Activo: true,
+      [Op.or]: [{ Usuario: valor }, { Email: valor.toLowerCase() }],
+    },
+  });
+}
+
+const MENSAJE_SOLICITUD =
+  'Si el usuario existe y tiene un email cargado, te enviamos un código. Revisá tu correo (y la carpeta de spam).';
+
+async function solicitarCodigo(req, res) {
+  try {
+    const { identificador } = req.body;
+    if (!identificador || !String(identificador).trim()) {
+      return res.status(400).json({ mensaje: 'Ingresá tu usuario o tu email' });
+    }
+    if (superaLimiteIp(req, 'solicitar')) {
+      return res.status(429).json({ mensaje: 'Demasiados pedidos. Esperá unos minutos y volvé a intentar.' });
+    }
+
+    const usuario = await buscarPorIdentificador(identificador);
+
+    if (usuario && usuario.Email) {
+      // Si ya se mandó un código hace menos de un minuto, no se reenvía
+      const enviadoHace =
+        usuario.codigo_recuperacion_expira &&
+        Date.now() - (new Date(usuario.codigo_recuperacion_expira).getTime() - MINUTOS_VALIDEZ * 60 * 1000);
+      const puedeEnviar = !enviadoHace || enviadoHace > ESPERA_REENVIO_MS;
+
+      if (puedeEnviar) {
+        const codigo = generarCodigo();
+        usuario.codigo_recuperacion_hash = await bcrypt.hash(codigo, 10);
+        usuario.codigo_recuperacion_expira = new Date(Date.now() + MINUTOS_VALIDEZ * 60 * 1000);
+        usuario.codigo_recuperacion_intentos = 0;
+        await usuario.save();
+
+        const correo = emailCodigoRecuperacion({
+          nombre: usuario.Nombre,
+          usuario: usuario.Usuario,
+          codigo,
+          minutos: MINUTOS_VALIDEZ,
+        });
+        try {
+          await enviarEmail({ para: usuario.Email, ...correo });
+        } catch (errorEnvio) {
+          console.error('ERROR ENVIANDO EMAIL DE RECUPERACIÓN:', errorEnvio.message);
+          return res.status(502).json({
+            mensaje: 'No se pudo enviar el correo en este momento. Intentá más tarde o pedile ayuda al Administrador.',
+          });
+        }
+      }
+    }
+
+    res.json({ mensaje: MENSAJE_SOLICITUD });
+  } catch (error) {
+    console.error('ERROR SOLICITAR CODIGO:', error);
+    res.status(500).json({ mensaje: 'Error al procesar la solicitud' });
   }
 }
 
-const MENSAJE_RECUPERACION_INVALIDA =
-  'Usuario o código de recuperación incorrectos. Si sos cajero, pedile al Administrador que te restablezca la contraseña.';
+const MENSAJE_CODIGO_INVALIDO = 'El código es incorrecto o venció. Pedí uno nuevo.';
 
-// POST /api/auth/recuperar  { usuario, codigo, nuevaPassword }
-async function recuperarContrasena(req, res) {
+async function restablecerContrasena(req, res) {
   try {
-    const { usuario, codigo, nuevaPassword } = req.body;
+    const { identificador, codigo, nuevaPassword } = req.body;
 
-    if (!usuario || !codigo || !nuevaPassword) {
-      return res.status(400).json({ mensaje: 'Usuario, código y nueva contraseña son obligatorios' });
+    if (!identificador || !codigo || !nuevaPassword) {
+      return res.status(400).json({ mensaje: 'Completá usuario o email, código y nueva contraseña' });
     }
     if (String(nuevaPassword).length < 6) {
       return res.status(400).json({ mensaje: 'La nueva contraseña debe tener al menos 6 caracteres' });
     }
+    if (superaLimiteIp(req, 'restablecer')) {
+      return res.status(429).json({ mensaje: 'Demasiados intentos. Esperá unos minutos y volvé a intentar.' });
+    }
 
-    const clave = claveIntentos(req, usuario);
-    if (estaBloqueado(clave)) {
-      return res.status(429).json({
-        mensaje: 'Demasiados intentos fallidos. Esperá 15 minutos y volvé a intentar.',
+    const usuario = await buscarPorIdentificador(identificador);
+    const vigente =
+      usuario &&
+      usuario.codigo_recuperacion_hash &&
+      usuario.codigo_recuperacion_expira &&
+      new Date(usuario.codigo_recuperacion_expira).getTime() > Date.now() &&
+      usuario.codigo_recuperacion_intentos < MAX_INTENTOS_CODIGO;
+
+    if (!vigente) {
+      return res.status(400).json({ mensaje: MENSAJE_CODIGO_INVALIDO });
+    }
+
+    const codigoLimpio = String(codigo).replace(/\D/g, '');
+    const correcto = await bcrypt.compare(codigoLimpio, usuario.codigo_recuperacion_hash);
+
+    if (!correcto) {
+      usuario.codigo_recuperacion_intentos += 1;
+      const restantes = MAX_INTENTOS_CODIGO - usuario.codigo_recuperacion_intentos;
+      if (restantes <= 0) {
+        usuario.codigo_recuperacion_hash = null; // demasiados intentos: se anula
+        usuario.codigo_recuperacion_expira = null;
+      }
+      await usuario.save();
+      return res.status(400).json({
+        mensaje: restantes > 0
+          ? `Código incorrecto. Te quedan ${restantes} intento${restantes === 1 ? '' : 's'}.`
+          : 'Código incorrecto. Se agotaron los intentos: pedí un código nuevo.',
       });
     }
 
-    const usuarioEncontrado = await Usuario.findOne({
-      where: { Usuario: String(usuario).trim(), Activo: true },
-      include: { model: Rol },
-    });
+    usuario.password_hash = await bcrypt.hash(String(nuevaPassword), 10);
+    usuario.codigo_recuperacion_hash = null; // el código sirve una sola vez
+    usuario.codigo_recuperacion_expira = null;
+    usuario.codigo_recuperacion_intentos = 0;
+    await usuario.save();
 
-    const esAdminConCodigo =
-      usuarioEncontrado &&
-      usuarioEncontrado.Rol?.Nombre === 'Admin' &&
-      usuarioEncontrado.codigo_recuperacion_hash;
-
-    const codigoValido =
-      esAdminConCodigo &&
-      (await bcrypt.compare(normalizarCodigo(codigo), usuarioEncontrado.codigo_recuperacion_hash));
-
-    // Mismo mensaje en todos los casos: no revelamos si el usuario existe
-    if (!codigoValido) {
-      registrarFallo(clave);
-      return res.status(401).json({ mensaje: MENSAJE_RECUPERACION_INVALIDA });
-    }
-
-    usuarioEncontrado.password_hash = await bcrypt.hash(String(nuevaPassword), 10);
-    usuarioEncontrado.codigo_recuperacion_hash = null; // el código es de un solo uso
-    await usuarioEncontrado.save();
-    intentosFallidos.delete(clave);
-
-    res.json({
-      mensaje:
-        'Contraseña restablecida. Iniciá sesión y generá un nuevo código de recuperación desde tu panel: el anterior ya no sirve.',
-    });
+    res.json({ mensaje: 'Contraseña restablecida. Ya podés iniciar sesión con tu nueva contraseña.' });
   } catch (error) {
-    console.error('ERROR RECUPERAR CONTRASEÑA:', error);
+    console.error('ERROR RESTABLECER CONTRASEÑA:', error);
     res.status(500).json({ mensaje: 'Error al restablecer la contraseña' });
   }
 }
 
-// GET /api/auth/codigo-recuperacion -> { tieneCodigo }
-async function estadoCodigoRecuperacion(req, res) {
-  try {
-    const admin = await Usuario.findByPk(req.usuario.id_Usuario);
-    if (!admin) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
-    res.json({ tieneCodigo: Boolean(admin.codigo_recuperacion_hash) });
-  } catch (error) {
-    console.error('ERROR ESTADO CODIGO RECUPERACION:', error);
-    res.status(500).json({ mensaje: 'Error al consultar el código de recuperación' });
-  }
-}
-
-// POST /api/auth/codigo-recuperacion  { password } -> { codigo }
-// Pide la contraseña actual para que nadie que encuentre la sesión abierta
-// pueda generarse un código a escondidas. El código se muestra UNA sola vez.
-async function generarCodigoRecuperacion(req, res) {
-  try {
-    const { password } = req.body;
-    if (!password) {
-      return res.status(400).json({ mensaje: 'Ingresá tu contraseña actual' });
-    }
-
-    const admin = await Usuario.findByPk(req.usuario.id_Usuario);
-    if (!admin) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
-
-    const passwordValida = await bcrypt.compare(password, admin.password_hash);
-    if (!passwordValida) {
-      return res.status(401).json({ mensaje: 'La contraseña actual es incorrecta' });
-    }
-
-    const codigo = generarCodigoPlano();
-    admin.codigo_recuperacion_hash = await bcrypt.hash(normalizarCodigo(codigo), 10);
-    await admin.save();
-
-    res.status(201).json({ codigo });
-  } catch (error) {
-    console.error('ERROR GENERAR CODIGO RECUPERACION:', error);
-    res.status(500).json({ mensaje: 'Error al generar el código de recuperación' });
-  }
-}
-
-module.exports = { login, recuperarContrasena, estadoCodigoRecuperacion, generarCodigoRecuperacion };
+module.exports = { login, solicitarCodigo, restablecerContrasena };
