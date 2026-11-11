@@ -311,7 +311,7 @@ export default function Pos() {
     <div className="caja">
       {/* HEADER FIJO CON POSICIONAMIENTO ADHESIVO E ISOTIPO OFICIAL */}
       <header
-        className="caja-header"
+        className="caja-header pos-header r-topbar"
         style={{
           position: "sticky",
           top: 0,
@@ -324,7 +324,7 @@ export default function Pos() {
           boxShadow: "0 4px 15px rgba(0, 0, 0, 0.15)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+        <div className="r-topbar-grupo" style={{ display: "flex", alignItems: "center", gap: "15px" }}>
           {/* Isotipo Oficial Interactivo */}
           <div
             onClick={() => setMostrarIconoBlanco(!mostrarIconoBlanco)}
@@ -377,7 +377,7 @@ export default function Pos() {
                 Turno Abierto
               </span>
             </div>
-            <p style={{ margin: "2px 0 0 0", fontSize: "0.8em", color: "#b0a9d8" }}>
+            <p className="r-solo-desktop" style={{ margin: "2px 0 0 0", fontSize: "0.8em", color: "#b0a9d8" }}>
               Terminal de punto de venta
             </p>
           </div>
@@ -408,6 +408,7 @@ export default function Pos() {
           </div>
 
           <span
+            className="r-solo-desktop"
             style={{
               color: "white",
               fontSize: "0.95em",
@@ -433,9 +434,10 @@ export default function Pos() {
           </span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <div className="r-topbar-grupo r-topbar-grupo-acciones" style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           {/* BOTÓN CERRAR CAJA */}
           <button
+            className="pos-btn-cerrar"
             onClick={() => setMostrarCierre(true)}
             style={{
               backgroundColor: "#f39c12",
@@ -464,6 +466,7 @@ export default function Pos() {
 
           {/* BURBUJA DEL USUARIO */}
           <div
+            className="r-topbar-usuario"
             style={{
               display: "flex",
               alignItems: "center",
@@ -536,7 +539,7 @@ export default function Pos() {
           >
             <h2 style={{ margin: 0, color: "#2c3e50" }}>Productos</h2>
 
-            <div style={{ position: "relative", minWidth: "220px" }}>
+            <div className="r-input-ancho" style={{ position: "relative", minWidth: "220px" }}>
               <input
                 type="text"
                 placeholder="Filtrar por nombre..."
@@ -728,7 +731,7 @@ export default function Pos() {
 
         {/* SECCIÓN VENTA ACTUAL */}
         <section
-          className="card carrito"
+          className="card carrito pos-carrito"
           style={{
             padding: "25px",
             borderRadius: "12px",

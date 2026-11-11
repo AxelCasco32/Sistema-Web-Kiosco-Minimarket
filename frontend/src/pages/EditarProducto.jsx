@@ -70,15 +70,15 @@ export default function EditarProducto() {
   );
 
   return (
-    <div style={styles.pageContainer}>
-      <div style={styles.card}>
+    <div className="r-pagina" style={styles.pageContainer}>
+      <div className="r-card" style={styles.card}>
         
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "25px", paddingBottom: "20px", borderBottom: "2px solid #f0f0f0" }}>
+        <div className="r-encabezado" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "25px", paddingBottom: "20px", borderBottom: "2px solid #f0f0f0" }}>
           <h2 style={{ margin: 0, color: "#2c3e50", display: "flex", alignItems: "center", gap: "10px" }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#261d60" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             Editar Producto
           </h2>
-          <Link to="/admin" style={styles.actionBtnOutline} onMouseOver={(e) => { e.currentTarget.style.backgroundColor = "#e6e4f4"; }} onMouseOut={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}>
+          <Link to="/admin" className="r-boton-volver" style={styles.actionBtnOutline} onMouseOver={(e) => { e.currentTarget.style.backgroundColor = "#e6e4f4"; }} onMouseOut={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Volver al Panel
           </Link>
@@ -110,6 +110,7 @@ export default function EditarProducto() {
                 <div 
                   key={p.idProductos || p.Cod_barra} 
                   onClick={() => handleSeleccion(p.idProductos || p.Cod_barra)}
+                  className="r-fila-lista"
                   style={{ 
                     padding: "12px 15px", borderBottom: "1px solid #f0f0f0", cursor: "pointer", 
                     backgroundColor: seleccionado ? "rgba(38, 29, 96, 0.08)" : "transparent", // Fondo morado muy clarito

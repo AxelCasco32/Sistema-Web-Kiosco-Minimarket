@@ -51,7 +51,7 @@ export default function CierresCaja() {
 
   return (
     <div style={{ backgroundColor: "#f4f6f8", minHeight: "100vh" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", padding: "15px 20px", backgroundColor: "#261d60", color: "white" }}>
+      <header className="r-topbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", padding: "15px 20px", backgroundColor: "#261d60", color: "white" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
           <div style={{ backgroundColor: "rgba(255, 255, 255, 0.1)", padding: "10px", borderRadius: "8px", display: "flex" }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -73,8 +73,8 @@ export default function CierresCaja() {
         </Link>
       </header>
 
-      <main style={{ padding: "25px 16px", maxWidth: "1200px", margin: "0 auto" }}>
-        <section style={{ backgroundColor: "white", padding: "22px", borderRadius: "14px", border: "1px solid #edf0f2", boxShadow: "0 4px 18px rgba(0,0,0,0.03)" }}>
+      <main className="r-pagina" style={{ padding: "25px 16px", maxWidth: "1200px", margin: "0 auto" }}>
+        <section className="r-card" style={{ backgroundColor: "white", padding: "22px", borderRadius: "14px", border: "1px solid #edf0f2", boxShadow: "0 4px 18px rgba(0,0,0,0.03)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "15px" }}>
             <div>
               <h2 style={{ margin: 0, color: "#2c3e50", fontSize: "1.2em" }}>Turnos registrados ({turnosFiltrados.length})</h2>
@@ -106,7 +106,7 @@ export default function CierresCaja() {
             <p style={{ textAlign: "center", color: "#7f8c8d", padding: "30px 0" }}>No hay turnos para mostrar.</p>
           ) : (
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <table className="r-tabla" style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                 <thead>
                   <tr style={{ backgroundColor: "#261d60", color: "white" }}>
                     <th style={{ ...th, borderRadius: "8px 0 0 0" }}>Turno</th>

@@ -170,7 +170,7 @@ export default function AdminDashboard() {
       {/* HEADER DEL ADMIN CON ISOTIPO INTERACTIVO */}
 {/* HEADER DEL ADMIN CON ISOTIPO INTERACTIVO (FIJO AL HACER SCROLL) */}
       <header
-        className="caja-header"
+        className="caja-header r-topbar"
         style={{
           position: "sticky",
           top: 0,
@@ -184,7 +184,7 @@ export default function AdminDashboard() {
           boxShadow: "0 4px 15px rgba(0, 0, 0, 0.15)", // Sombra suave para separar del contenido al scrollear
         }}
       >        
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+      <div className="r-topbar-grupo" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           
           {/* Contenedor del Isotipo Oficial */}
           <div 
@@ -223,13 +223,13 @@ export default function AdminDashboard() {
                 ADMIN
               </span>
             </div>
-            <p style={{ margin: "2px 0 0 0", fontSize: "0.82em", opacity: 0.8 }}>
+            <p className="r-solo-desktop" style={{ margin: "2px 0 0 0", fontSize: "0.82em", opacity: 0.8 }}>
               Panel de control y administración central
             </p>
           </div>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', backgroundColor: 'rgba(255,255,255,0.1)', padding: '8px 20px', borderRadius: '40px', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="r-topbar-usuario" style={{ display: 'flex', alignItems: 'center', gap: '20px', backgroundColor: 'rgba(255,255,255,0.1)', padding: '8px 20px', borderRadius: '40px', border: '1px solid rgba(255,255,255,0.1)' }}>
           <span style={{ color: 'white', fontSize: '1.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
             <strong>{usuarioActual?.nombre || 'Admin'}</strong>
@@ -242,15 +242,15 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <div style={{ padding: "40px 30px", maxWidth: "1200px", margin: "0 auto" }}>
+      <div className="r-pagina" style={{ padding: "40px 30px", maxWidth: "1200px", margin: "0 auto" }}>
         
         {/* =========================================
             SECCIÓN 1: FORMULARIO Y LISTA DE USUARIOS
            ========================================= */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '30px', marginBottom: "40px" }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(350px, 100%), 1fr))', gap: '30px', marginBottom: "40px" }}>
           
           {/* FORMULARIO DINÁMICO (CREAR / EDITAR) */}
-          <section className="card" style={{ padding: "30px", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", border: "1px solid #f0f0f0", backgroundColor: "white" }}>
+          <section className="card r-card" style={{ padding: "30px", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", border: "1px solid #f0f0f0", backgroundColor: "white" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "25px", paddingBottom: "10px", borderBottom: "2px solid #f4f6f8" }}>
               <h2 style={{ margin: 0, color: idSeleccionado ? "#261d60" : "#2c3e50" }}>
                 {idSeleccionado ? "Editar usuario" : "Crear usuario"}
@@ -327,7 +327,7 @@ export default function AdminDashboard() {
           </section>
 
           {/* LISTA DE USUARIOS EXISTENTES */}
-          <section className="card" style={{ padding: "30px", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", border: "1px solid #f0f0f0", backgroundColor: "white" }}>
+          <section className="card r-card" style={{ padding: "30px", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.05)", border: "1px solid #f0f0f0", backgroundColor: "white" }}>
             <h2 style={{ marginTop: 0, marginBottom: "10px", color: "#2c3e50" }}>
               Usuarios existentes
             </h2>
@@ -672,7 +672,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Buscador de producto por nombre o código */}
-            <div style={{ position: "relative", minWidth: "240px", flex: "1 1 240px", maxWidth: "340px" }}>
+            <div className="r-input-ancho" style={{ position: "relative", minWidth: "240px", flex: "1 1 240px", maxWidth: "340px" }}>
               <input
                 type="text"
                 placeholder="Buscar por nombre o código..."
@@ -732,6 +732,7 @@ export default function AdminDashboard() {
                 return (
                   <div
                     key={prod.idProductos || prod.Cod_barra || prod.id}
+                    className="r-fila-lista"
                     style={{
                       backgroundColor: "#ffffff",
                       border: `1.5px solid ${colorBordeFino}`,

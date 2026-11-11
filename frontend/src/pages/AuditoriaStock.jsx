@@ -31,7 +31,7 @@ export default function AuditoriaStock() {
   return (
     <div style={{ backgroundColor: "#f4f6f8", minHeight: "100vh" }}>
       {/* Header Corporativo */}
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px 30px", backgroundColor: "#261d60", color: "white" }}>
+      <header className="r-topbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px 30px", backgroundColor: "#261d60", color: "white" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
           <div style={{ backgroundColor: "rgba(255, 255, 255, 0.1)", padding: "10px", borderRadius: "8px", display: "flex" }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -39,7 +39,7 @@ export default function AuditoriaStock() {
             </svg>
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: "bold" }}>Auditoría de Modificaciones</h1>
+            <h1 className="r-titulo-pagina" style={{ margin: 0, fontSize: "1.5rem", fontWeight: "bold" }}>Auditoría de Modificaciones</h1>
             <span style={{ fontSize: "0.85em", opacity: 0.8 }}>Registro histórico de cambios manuales de stock y precios</span>
           </div>
         </div>
@@ -52,8 +52,8 @@ export default function AuditoriaStock() {
         </Link>
       </header>
 
-      <main style={{ padding: "35px 25px", maxWidth: "1200px", margin: "0 auto" }}>
-        <section style={{ backgroundColor: "white", padding: "26px", borderRadius: "14px", border: "1px solid #edf0f2", boxShadow: "0 4px 18px rgba(0,0,0,0.03)" }}>
+      <main className="r-pagina" style={{ padding: "35px 25px", maxWidth: "1200px", margin: "0 auto" }}>
+        <section className="r-card" style={{ backgroundColor: "white", padding: "26px", borderRadius: "14px", border: "1px solid #edf0f2", boxShadow: "0 4px 18px rgba(0,0,0,0.03)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "15px" }}>
             <div>
               <h2 style={{ margin: 0, color: "#2c3e50", fontSize: "1.25em" }}>Movimientos registrados ({logsFiltrados.length})</h2>
@@ -66,6 +66,7 @@ export default function AuditoriaStock() {
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
               style={{ padding: "8px 16px", borderRadius: "20px", border: "1px solid #dcdde1", fontSize: "0.9em", minWidth: "280px", outline: "none" }}
+              className="r-input-ancho"
             />
           </div>
 
@@ -75,7 +76,7 @@ export default function AuditoriaStock() {
             <p style={{ textAlign: "center", color: "#7f8c8d", padding: "30px 0" }}>No hay registros de modificaciones manuales aún.</p>
           ) : (
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <table className="r-tabla" style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                 <thead>
                   <tr style={{ backgroundColor: "#261d60", color: "white" }}>
                     <th style={{ padding: "12px 14px", borderRadius: "8px 0 0 0" }}>Fecha y Hora</th>
