@@ -26,21 +26,27 @@ function obtenerTransporter() {
   return transporter;
 }
 
-async function enviarEmail({ para, asunto, texto, html }) {
+// Devuelve true si el correo se envió, false si no hay SMTP configurado
+// (en ese caso solo se muestra en la consola). Si el servidor de correo
+// falla, lanza el error.
+async function enviarEmail({ para, asunto, texto, html, adjuntos, responderA }) {
   if (!smtpConfigurado()) {
     console.warn(
       `\n[EMAIL NO ENVIADO - falta SMTP_HOST en el .env]\nPara: ${para}\nAsunto: ${asunto}\n${texto}\n`
     );
-    return;
+    return false;
   }
 
   await obtenerTransporter().sendMail({
     from: process.env.SMTP_FROM || process.env.SMTP_USER,
     to: para,
+    replyTo: responderA,
     subject: asunto,
     text: texto,
     html,
+    attachments: adjuntos,
   });
+  return true;
 }
 
 function escaparHtml(texto) {
@@ -71,4 +77,4 @@ function emailCodigoRecuperacion({ nombre, usuario, codigo, minutos }) {
   return { asunto, texto, html };
 }
 
-module.exports = { enviarEmail, emailCodigoRecuperacion, smtpConfigurado };
+module.exports = { enviarEmail, emailCodigoRecuperacion, smtpConfigurado, escaparHtml };
