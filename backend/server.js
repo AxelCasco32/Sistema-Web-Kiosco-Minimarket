@@ -7,11 +7,13 @@
 //   - Levantar el servidor en el puerto definido en .env (PORT).
 // No debe contener lógica de negocio: solo arma y arranca la app.
 require('dotenv').config();
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const { sequelize } = require('./src/models');
 const { aplicarMigraciones } = require('./src/config/migraciones');
+const { iniciarSocket } = require('./src/realtime/socket');
 
 const authRoutes = require('./src/routes/auth.routes');
 const usuariosRoutes = require('./src/routes/usuarios.routes');
@@ -54,7 +56,10 @@ sequelize
     return aplicarMigraciones();
   })
   .then(() => {
-    app.listen(PORT, () => {
+    // Mismo servidor para la API y los WebSockets (tiempo real del panel)
+    const servidor = http.createServer(app);
+    iniciarSocket(servidor, origenesPermitidos);
+    servidor.listen(PORT, () => {
       console.log(`Servidor corriendo en http://localhost:${PORT}`);
     });
   })

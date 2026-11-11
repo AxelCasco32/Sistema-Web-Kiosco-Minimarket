@@ -1,5 +1,8 @@
 const { Producto, Venta, DetalleVenta, TurnoCaja, Usuario, sequelize } = require('../models');
+const { Op } = require('sequelize');
 const { puedeOperarTurno } = require('./turnos.controller');
+const { avisarAdmins } = require('../realtime/socket');
+const { inicioDeHoyAR, horaAR } = require('../utils/fechaAR');
 
 // Normaliza lo que manda el POS ("efectivo", "tarjeta", "transferencia", "qr")
 // a los valores del ENUM de la tabla venta.
@@ -58,6 +61,10 @@ async function registrarVenta(req, res) {
       id_turno: turno.idturnos_caja
     }, { transaction: t });
 
+    // Para el aviso en tiempo real: ganancia (precio - costo) y productos
+    let gananciaVenta = 0;
+    const itemsAviso = [];
+
     // 2. Recorremos cada producto del carrito para descontar stock y armar el detalle
     for (const item of detalle) {
       const producto = await Producto.findByPk(item.idProductos, { transaction: t });
@@ -69,6 +76,9 @@ async function registrarVenta(req, res) {
       if (producto.Stock < item.cantidad) {
         throw new Error(`Stock insuficiente para "${producto.Nombre}". Quedan solo ${producto.Stock} unidades.`);
       }
+
+      gananciaVenta += (Number(item.precio_unitario) - Number(producto.Precio_costo || 0)) * Number(item.cantidad);
+      itemsAviso.push({ nombre: producto.Nombre, cantidad: Number(item.cantidad) });
 
       // Restamos la cantidad vendida al stock actual
       producto.Stock -= item.cantidad;
@@ -87,6 +97,23 @@ async function registrarVenta(req, res) {
     // 4. Si todo salió bien (Venta, Detalles y Stock), confirmamos los cambios (commit)
     await t.commit();
     res.status(200).json({ mensaje: "Venta registrada correctamente y stock descontado" });
+
+    // 5. Aviso en tiempo real al panel de Admin (si falla, la venta ya quedó guardada)
+    try {
+      const cajero = await Usuario.findByPk(req.usuario.id_Usuario);
+      avisarAdmins('venta:nueva', {
+        idVenta: nuevaVenta.id_Venta,
+        fecha: nuevaVenta.Fecha_Hora,
+        hora: horaAR(nuevaVenta.Fecha_Hora),
+        total: totalVenta,
+        ganancia: Number(gananciaVenta.toFixed(2)),
+        metodoPago: metodo,
+        cajero: cajero ? `${cajero.Nombre} ${cajero.Apellido}`.trim() : 'Cajero',
+        items: itemsAviso,
+      });
+    } catch (errorAviso) {
+      console.error('No se pudo enviar el aviso en tiempo real:', errorAviso.message);
+    }
 
   } catch (error) {
     // Si hubo algún error, cancelamos TODO (rollback)
@@ -252,7 +279,83 @@ async function obtenerProductosMasVendidos(req, res) {
     res.status(500).json({ error: "No se pudo generar el reporte" });
   }
 }
+// ==========================================
+// Resumen del día para el panel en tiempo real (solo Admin)
+// GET /api/ventas/resumen-hoy
+// ==========================================
+async function resumenHoy(req, res) {
+  try {
+    const inicio = inicioDeHoyAR();
+    const ventas = await Venta.findAll({
+      where: { Fecha_Hora: { [Op.gte]: inicio } },
+      order: [['Fecha_Hora', 'DESC']],
+    });
+
+    const ids = ventas.map((v) => v.id_Venta);
+    const detalles = ids.length ? await DetalleVenta.findAll({ where: { id_venta: ids } }) : [];
+    const idsProductos = [...new Set(detalles.map((d) => d.id_producto))];
+    const productos = idsProductos.length ? await Producto.findAll({ where: { idProductos: idsProductos } }) : [];
+    const costo = new Map(productos.map((p) => [p.idProductos, Number(p.Precio_costo || 0)]));
+    const nombre = new Map(productos.map((p) => [p.idProductos, p.Nombre]));
+
+    const idsTurnos = [...new Set(ventas.map((v) => v.id_turno))];
+    const turnos = idsTurnos.length ? await TurnoCaja.findAll({ where: { idturnos_caja: idsTurnos } }) : [];
+    const idsUsuarios = [...new Set(turnos.map((t) => t.id_Usuario))];
+    const usuarios = idsUsuarios.length ? await Usuario.findAll({ where: { id_Usuario: idsUsuarios } }) : [];
+    const usuarioPorId = new Map(usuarios.map((u) => [u.id_Usuario, `${u.Nombre} ${u.Apellido}`.trim()]));
+    const cajeroPorTurno = new Map(turnos.map((t) => [t.idturnos_caja, usuarioPorId.get(t.id_Usuario) || 'Cajero']));
+
+    const gananciaPorVenta = new Map();
+    const itemsPorVenta = new Map();
+    for (const d of detalles) {
+      const g = (Number(d.Precio_unitario) - (costo.get(d.id_producto) || 0)) * Number(d.Cantidad);
+      gananciaPorVenta.set(d.id_venta, (gananciaPorVenta.get(d.id_venta) || 0) + g);
+      if (!itemsPorVenta.has(d.id_venta)) itemsPorVenta.set(d.id_venta, []);
+      itemsPorVenta.get(d.id_venta).push({ nombre: nombre.get(d.id_producto) || 'Producto', cantidad: Number(d.Cantidad) });
+    }
+
+    const porHora = Array.from({ length: 24 }, (_, hora) => ({ hora, recaudado: 0, ganancia: 0, ventas: 0 }));
+    const porMetodo = {};
+    let recaudado = 0;
+    let ganancia = 0;
+    for (const v of ventas) {
+      const total = Number(v.Total_Venta || 0);
+      const g = gananciaPorVenta.get(v.id_Venta) || 0;
+      const h = porHora[horaAR(v.Fecha_Hora)];
+      h.recaudado += total; h.ganancia += g; h.ventas += 1;
+      porMetodo[v.Metodo_Pago] = (porMetodo[v.Metodo_Pago] || 0) + total;
+      recaudado += total;
+      ganancia += g;
+    }
+
+    const redondear = (n) => Number(n.toFixed(2));
+    res.json({
+      desde: inicio,
+      cantidadVentas: ventas.length,
+      recaudado: redondear(recaudado),
+      ganancia: redondear(ganancia),
+      ticketPromedio: ventas.length ? redondear(recaudado / ventas.length) : 0,
+      porHora: porHora.map((h) => ({ ...h, recaudado: redondear(h.recaudado), ganancia: redondear(h.ganancia) })),
+      porMetodo,
+      ultimas: ventas.slice(0, 8).map((v) => ({
+        idVenta: v.id_Venta,
+        fecha: v.Fecha_Hora,
+        hora: horaAR(v.Fecha_Hora),
+        total: Number(v.Total_Venta || 0),
+        ganancia: redondear(gananciaPorVenta.get(v.id_Venta) || 0),
+        metodoPago: v.Metodo_Pago,
+        cajero: cajeroPorTurno.get(v.id_turno) || 'Cajero',
+        items: itemsPorVenta.get(v.id_Venta) || [],
+      })),
+    });
+  } catch (error) {
+    console.error('Error al calcular el resumen del día:', error);
+    res.status(500).json({ error: 'No se pudo calcular el resumen del día' });
+  }
+}
+
 module.exports = {
+  resumenHoy,
   registrarVenta,
   obtenerVentas,
   obtenerProductosMasVendidos // <-- Exportamos la nueva función
