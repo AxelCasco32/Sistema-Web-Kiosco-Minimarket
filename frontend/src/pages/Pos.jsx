@@ -8,6 +8,7 @@ import BuscarClienteModal from "../components/BuscarClienteModal";
 import { useNavigate } from "react-router-dom";
 import CierreCajaModal from "../components/CierreCajaModal";
 import { alertaExito, alertaError, alertaAviso, confirmar, avisoRapido, mensajeDeError } from "../utils/alertas";
+import { STOCK_CRITICO } from "../utils/stockCritico";
 
 // Isotipos oficiales de KiosquitoYa
 import iconoMorado from "../assets/IconoKiosquitoYa_morado.png";
@@ -280,10 +281,22 @@ export default function Pos() {
 
       await api.post("/ventas", datosVenta);
       const vueltoEntregado = medioPago === "efectivo" ? Math.max(vuelto, 0) : 0;
+
+      // Alerta: productos que con esta venta quedaron en stock crítico
+      const quedanPocos = carrito
+        .map((p) => ({ nombre: p.Nombre, quedan: Number(p.Stock) - Number(p.cantidad) }))
+        .filter((p) => p.quedan <= STOCK_CRITICO);
+      const avisoStock = quedanPocos.length
+        ? `\n\nStock crítico: ` +
+          quedanPocos.map((p) => `${p.nombre} (${p.quedan === 0 ? "sin stock" : `quedan ${p.quedan}`})`).join(", ") +
+          `.\nAvisale al administrador para reponer.`
+        : "";
+
       alertaExito(
         "¡Venta registrada!",
         `Total cobrado: $${total.toFixed(2)}` +
-          (vueltoEntregado > 0 ? `\nVuelto a entregar: $${vueltoEntregado.toFixed(2)}` : "")
+          (vueltoEntregado > 0 ? `\nVuelto a entregar: $${vueltoEntregado.toFixed(2)}` : "") +
+          avisoStock
       );
 
       // Si fue en efectivo, sumamos el neto al cajón físico

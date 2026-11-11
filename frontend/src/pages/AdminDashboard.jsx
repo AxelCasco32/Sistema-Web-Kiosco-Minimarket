@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import { Link } from "react-router-dom";
-import { alertaExito, alertaError, alertaAviso, confirmar, mensajeDeError } from "../utils/alertas";
+import { alertaExito, alertaError, alertaAviso, confirmar, mensajeDeError, avisoRapido } from "../utils/alertas";
+import { STOCK_CRITICO, descargarCriticosCsv, enviarCriticosProveedor } from "../utils/stockCritico";
 import "../styles/common.css";
 import "../styles/pos.css"; 
 
@@ -43,6 +44,15 @@ export default function AdminDashboard() {
       
       const resProductos = await api.get("/productos");
       setProductos(resProductos.data);
+
+      // Alerta de stock crítico: una vez por sesión al entrar al panel
+      const criticos = resProductos.data.filter((p) => p.Stock <= STOCK_CRITICO).length;
+      let yaAvisado = false;
+      try { yaAvisado = sessionStorage.getItem("aviso_stock_critico") === "1"; } catch { /* sin almacenamiento */ }
+      if (criticos > 0 && !yaAvisado) {
+        avisoRapido(`Hay ${criticos} producto${criticos === 1 ? "" : "s"} en stock crítico`, "warning");
+        try { sessionStorage.setItem("aviso_stock_critico", "1"); } catch { /* sin almacenamiento */ }
+      }
     } catch (error) {
       console.error("Fallo al descargar datos:", error);
     }
@@ -573,6 +583,66 @@ export default function AdminDashboard() {
               </select>
             </div>
           </div>
+
+          {/* Alerta de stock crítico con exportación y envío al proveedor */}
+          {conteoAlertas.critico > 0 ? (
+            <div
+              role="alert"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "12px",
+                backgroundColor: "#fff5f5",
+                border: "1px solid #fecaca",
+                borderLeft: "5px solid #c62828",
+                borderRadius: "10px",
+                padding: "14px 16px",
+                marginBottom: "18px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: "1 1 260px" }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c62828" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <div>
+                  <strong style={{ color: "#b71c1c", display: "block" }}>
+                    {conteoAlertas.critico} producto{conteoAlertas.critico === 1 ? "" : "s"} en stock crítico
+                  </strong>
+                  <span style={{ color: "#7f1d1d", fontSize: "0.86em" }}>
+                    Con {STOCK_CRITICO} unidades o menos. Exportá la lista o enviásela al proveedor.
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={descargarCriticosCsv}
+                  style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 14px", borderRadius: "8px", border: "1px solid #2e7d32", backgroundColor: "#ffffff", color: "#2e7d32", fontWeight: "bold", cursor: "pointer", fontSize: "0.88em" }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  Exportar a Excel
+                </button>
+                <button
+                  type="button"
+                  onClick={enviarCriticosProveedor}
+                  style={{ display: "flex", alignItems: "center", gap: "8px", padding: "9px 14px", borderRadius: "8px", border: "none", backgroundColor: "#261d60", color: "#ffffff", fontWeight: "bold", cursor: "pointer", fontSize: "0.88em" }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                  Enviar al proveedor
+                </button>
+              </div>
+            </div>
+          ) : (
+            productos.length > 0 && (
+              <div style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534", borderRadius: "10px", padding: "10px 14px", marginBottom: "18px", fontSize: "0.9em" }}>
+                Ningún producto en stock crítico.
+              </div>
+            )
+          )}
 
           {/* Barra de Filtros y Búsqueda */}
           <div
