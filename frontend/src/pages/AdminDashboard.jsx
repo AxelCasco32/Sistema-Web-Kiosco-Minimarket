@@ -4,6 +4,7 @@ import api from "../services/api";
 import { Link } from "react-router-dom";
 import { alertaExito, alertaError, alertaAviso, confirmar, mensajeDeError, avisoRapido } from "../utils/alertas";
 import { STOCK_CRITICO, descargarCriticosCsv, enviarCriticosProveedor } from "../utils/stockCritico";
+import GananciasEnVivo from "../components/GananciasEnVivo";
 import "../styles/common.css";
 import "../styles/pos.css"; 
 
@@ -253,6 +254,10 @@ export default function AdminDashboard() {
       </header>
 
       <div className="r-pagina" style={{ padding: "40px 30px", maxWidth: "1200px", margin: "0 auto" }}>
+
+        {/* Ganancias del día en tiempo real (WebSockets) */}
+        <GananciasEnVivo />
+
         
         {/* =========================================
             SECCIÓN 1: FORMULARIO Y LISTA DE USUARIOS

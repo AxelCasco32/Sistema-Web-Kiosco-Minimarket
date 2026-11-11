@@ -12,12 +12,16 @@ const router = express.Router();
 const { 
   registrarVenta, 
   obtenerVentas, 
-  obtenerProductosMasVendidos // <-- Importada acá
+  obtenerProductosMasVendidos, // <-- Importada acá
+  resumenHoy,
 } = require('../controllers/ventas.controller');
 const { verificarToken, soloAdmin } = require('../middlewares/auth');
 
 // Ruta para obtener el reporte de los productos más vendidos
 router.get('/reportes/mas-vendidos', verificarToken, soloAdmin, obtenerProductosMasVendidos);
+
+// Resumen del día (ganancias en tiempo real del panel de Admin)
+router.get('/resumen-hoy', verificarToken, soloAdmin, resumenHoy);
 
 // Ruta GET para enviar el historial de ventas al panel de Admin
 router.get('/', verificarToken, soloAdmin, obtenerVentas);
