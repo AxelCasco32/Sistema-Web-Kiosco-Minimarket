@@ -18,6 +18,8 @@ const sequelize = new Sequelize(
     port: process.env.DB_PORT,
     dialect: 'mysql',
     logging: false, // Desactivar logs de SQL en consola
+    // El plan gratuito de Clever Cloud admite pocas conexiones simultáneas
+    pool: { max: Number(process.env.DB_POOL_MAX) || 4, min: 0, idle: 10000 },
   }
 );
 

@@ -124,6 +124,16 @@ Recuperar la contraseña del Admin
 
 El backend aplica solo las migraciones que falten en la base al arrancar (src/config/migraciones.js).
 
+Publicar en internet (Render + Vercel)
+
+La base ya está en Clever Cloud. El backend se publica en Render y el frontend en Vercel, los dos conectados a este repositorio de GitHub (cada push a main se vuelve a publicar solo).
+
+1. Backend en Render: New > Blueprint > elegir este repositorio (usa render.yaml). Completar las variables: DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD (las del .env), SMTP_* si se quiere enviar emails, y FRONTEND_URL (se completa en el paso 3). Al terminar, probar https://<tu-servicio>.onrender.com/api/health
+2. Frontend en Vercel: Add New > Project > importar este repositorio, Root Directory = frontend (Vite se detecta solo). Agregar la variable VITE_API_URL = https://<tu-servicio>.onrender.com/api y publicar.
+3. Volver a Render y poner en FRONTEND_URL la dirección que dio Vercel (por ejemplo https://kiosquito.vercel.app), sin barra al final. Guardar: el backend se reinicia solo.
+
+El plan gratuito de Render "duerme" el backend tras 15 minutos sin uso: el primer pedido después tarda unos segundos en responder.
+
 Reglas del repo
 El .env no se sube (ya está en .gitignore) — cada uno crea el suyo copiando .env.example y pone ahí su usuario/contraseña de MySQL.
 Un modelo por tabla, un controller y una ruta por recurso. Nada de meter todo en un archivo.
