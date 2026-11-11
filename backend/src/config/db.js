@@ -23,6 +23,10 @@ const sequelize = new Sequelize(DB.name, DB.user, DB.password, {
   logging: false, // Desactivar logs de SQL en consola
   // El plan gratuito de Clever Cloud admite pocas conexiones simultáneas
   pool: { max: Number(process.env.DB_POOL_MAX) || 4, min: 0, idle: 10000 },
+  // DB_SSL=true: conexión cifrada (algunos servidores la exigen a conexiones externas)
+  dialectOptions: limpio(process.env.DB_SSL) === 'true'
+    ? { ssl: { rejectUnauthorized: false } }
+    : {},
 });
 
 // Huella corta de la contraseña: permite comparar dos contraseñas sin mostrarlas
@@ -32,7 +36,7 @@ const huella = (v) => crypto.createHash('sha256').update(String(v || '')).digest
 sequelize.diagnostico = () => {
   const crudo = process.env.DB_PASSWORD || '';
   return (
-    `host=${DB.host} puerto=${DB.port} base=${DB.name} usuario=${DB.user} ` +
+    `ssl=${limpio(process.env.DB_SSL) === 'true' ? 'si' : 'no'} host=${DB.host} puerto=${DB.port} base=${DB.name} usuario=${DB.user} ` +
     `contraseña=${DB.password ? DB.password.length : 0} caracteres huella=${huella(DB.password)}` +
     (crudo !== (DB.password || '') ? ' (tenía espacios o saltos de línea, se quitaron)' : '')
   );
