@@ -60,5 +60,6 @@ sequelize
   })
   .catch((err) => {
     console.error('No se pudo iniciar el backend (conexión o migración de la base):');
+    console.error('Datos usados:', sequelize.diagnostico());
     console.error(err);
   });
