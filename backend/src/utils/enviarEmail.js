@@ -1,51 +1,145 @@
 // utils/enviarEmail.js
-// Envío de correos por SMTP (nodemailer). La configuración sale del .env:
-//   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM
-// Si SMTP_HOST no está configurado, el correo NO se envía: se muestra en la
-// consola del backend para poder probar en desarrollo sin cuenta de correo.
+// Envío de correos. Hay dos formas, según las variables del .env / Render:
+//
+// 1) API de Brevo (recomendada en Render): BREVO_API_KEY + SMTP_FROM.
+//    Envía por HTTPS, que no está bloqueado. El remitente de SMTP_FROM tiene
+//    que estar verificado en Brevo (Senders & IP > Senders).
+// 2) SMTP (por ejemplo Gmail): SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS,
+//    SMTP_FROM. Funciona en la PC; el plan gratuito de Render puede bloquear
+//    los puertos de correo (25/465/587).
+//
+// Si no hay ninguna configurada, el correo NO se envía: se muestra en la
+// consola del backend para poder probar en desarrollo.
 const nodemailer = require('nodemailer');
 
+const TIEMPO_LIMITE_MS = 10000; // 10 s: si el servidor no responde, se informa el error
 let transporter = null;
 
+const limpio = (v) => String(v || '').trim().replace(/^"(.*)"$/, '$1').trim();
+
+function brevoConfigurado() {
+  return Boolean(limpio(process.env.BREVO_API_KEY));
+}
+
 function smtpConfigurado() {
-  return Boolean((process.env.SMTP_HOST || '').trim());
+  return brevoConfigurado() || Boolean(limpio(process.env.SMTP_HOST));
+}
+
+// "KiosquitoYa <cuenta@gmail.com>" -> { nombre: 'KiosquitoYa', email: 'cuenta@gmail.com' }
+function remitente() {
+  const valor = limpio(process.env.SMTP_FROM) || limpio(process.env.SMTP_USER);
+  const m = valor.match(/^(.*)<([^>]+)>$/);
+  return m
+    ? { nombre: m[1].trim().replace(/^"|"$/g, '') || 'KiosquitoYa', email: m[2].trim() }
+    : { nombre: 'KiosquitoYa', email: valor };
 }
 
 function obtenerTransporter() {
   if (!transporter) {
-    const puerto = Number(process.env.SMTP_PORT) || 465;
+    const puerto = Number(limpio(process.env.SMTP_PORT)) || 465;
     transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST.trim(),
+      host: limpio(process.env.SMTP_HOST),
       port: puerto,
       secure: puerto === 465, // 465 = SSL directo; 587 = STARTTLS
-      auth: process.env.SMTP_USER
-        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+      auth: limpio(process.env.SMTP_USER)
+        ? { user: limpio(process.env.SMTP_USER), pass: limpio(process.env.SMTP_PASS) }
         : undefined,
+      connectionTimeout: TIEMPO_LIMITE_MS,
+      greetingTimeout: TIEMPO_LIMITE_MS,
+      socketTimeout: TIEMPO_LIMITE_MS * 2,
     });
   }
   return transporter;
 }
 
-// Devuelve true si el correo se envió, false si no hay SMTP configurado
-// (en ese caso solo se muestra en la consola). Si el servidor de correo
-// falla, lanza el error.
+// Traduce los errores más comunes a un motivo entendible para el log
+function explicarError(error) {
+  const codigo = error.code || error.responseCode || '';
+  if (['ETIMEDOUT', 'ESOCKET', 'ECONNECTION', 'ECONNREFUSED'].includes(codigo) || /timeout/i.test(error.message)) {
+    return `no se pudo conectar al servidor de correo (${codigo || 'timeout'}). Si el backend está en Render gratis, ` +
+      'los puertos SMTP están bloqueados: configurá BREVO_API_KEY.';
+  }
+  if (codigo === 'EAUTH' || error.responseCode === 535) {
+    return 'usuario o contraseña de correo incorrectos (EAUTH). Con Gmail hay que usar una contraseña de aplicación.';
+  }
+  return `${codigo ? codigo + ': ' : ''}${error.message}`;
+}
+
+async function enviarPorBrevo({ para, asunto, texto, html, adjuntos, responderA }) {
+  const desde = remitente();
+  const cuerpo = {
+    sender: { name: desde.nombre, email: desde.email },
+    to: [{ email: para }],
+    subject: asunto,
+    htmlContent: html || `<pre>${texto}</pre>`,
+    textContent: texto,
+  };
+  if (responderA) cuerpo.replyTo = { email: responderA };
+  if (adjuntos && adjuntos.length) {
+    cuerpo.attachment = adjuntos.map((a) => ({
+      name: a.filename,
+      content: Buffer.from(a.content).toString('base64'),
+    }));
+  }
+
+  const controlador = new AbortController();
+  const corte = setTimeout(() => controlador.abort(), TIEMPO_LIMITE_MS);
+  let respuesta;
+  try {
+    respuesta = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': limpio(process.env.BREVO_API_KEY),
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(cuerpo),
+      signal: controlador.signal,
+    });
+  } finally {
+    clearTimeout(corte);
+  }
+
+  if (!respuesta.ok) {
+    const detalle = await respuesta.text().catch(() => '');
+    const error = new Error(`Brevo respondió ${respuesta.status}: ${detalle.slice(0, 300)}`);
+    error.code = `BREVO_${respuesta.status}`;
+    throw error;
+  }
+}
+
+// Devuelve true si el correo se envió, false si no hay correo configurado
+// (en ese caso solo se muestra en la consola). Si el envío falla, lanza un
+// error con un mensaje que explica el motivo.
 async function enviarEmail({ para, asunto, texto, html, adjuntos, responderA }) {
   if (!smtpConfigurado()) {
     console.warn(
-      `\n[EMAIL NO ENVIADO - falta SMTP_HOST en el .env]\nPara: ${para}\nAsunto: ${asunto}\n${texto}\n`
+      `\n[EMAIL NO ENVIADO - falta BREVO_API_KEY o SMTP_HOST]\nPara: ${para}\nAsunto: ${asunto}\n${texto}\n`
     );
     return false;
   }
 
-  await obtenerTransporter().sendMail({
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
-    to: para,
-    replyTo: responderA,
-    subject: asunto,
-    text: texto,
-    html,
-    attachments: adjuntos,
-  });
+  try {
+    if (brevoConfigurado()) {
+      await enviarPorBrevo({ para, asunto, texto, html, adjuntos, responderA });
+    } else {
+      const desde = remitente();
+      await obtenerTransporter().sendMail({
+        from: { name: desde.nombre, address: desde.email },
+        to: para,
+        replyTo: responderA,
+        subject: asunto,
+        text: texto,
+        html,
+        attachments: adjuntos,
+      });
+    }
+  } catch (error) {
+    const motivo = explicarError(error);
+    console.error(`[EMAIL] Falló el envío a ${para} por ${brevoConfigurado() ? 'Brevo' : 'SMTP'}: ${motivo}`);
+    error.message = motivo;
+    throw error;
+  }
   return true;
 }
 
