@@ -22,7 +22,14 @@ const ventasRoutes = require('./src/routes/ventas.routes');
 const clientesRoutes = require('./src/routes/clientes.routes');
 const app = express();
 
-app.use(cors());
+// CORS: en producción solo se aceptan pedidos desde el frontend publicado
+// (FRONTEND_URL, se pueden poner varias separadas por coma). Sin la variable,
+// se acepta cualquier origen, como en desarrollo.
+const origenesPermitidos = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((o) => o.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+app.use(cors(origenesPermitidos.length ? { origin: origenesPermitidos } : undefined));
 app.use(express.json());
 app.use(morgan('dev'));
 
@@ -53,5 +60,6 @@ sequelize
   })
   .catch((err) => {
     console.error('No se pudo iniciar el backend (conexión o migración de la base):');
+    console.error('Datos usados:', sequelize.diagnostico());
     console.error(err);
   });
