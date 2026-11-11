@@ -1,0 +1,148 @@
+/* responsive.css
+   Ajustes para tablet y celular. La mayoría de las pantallas usan estilos
+   en línea (style={{...}}), por eso estas reglas usan !important: solo se
+   activan en pantallas chicas y no cambian nada en la PC. */
+
+* {
+  box-sizing: border-box;
+}
+
+img,
+svg,
+canvas {
+  max-width: 100%;
+}
+
+/* Las columnas de las grillas no crecen más que la pantalla por su contenido
+   (por ejemplo, la fila desplazable de categorías de la caja) */
+.caja-contenido > * {
+  min-width: 0;
+}
+
+/* Las tablas anchas se desplazan dentro de su caja en vez de aplastarse */
+.r-tabla {
+  min-width: 620px;
+}
+
+/* ===================== TABLET (≤ 1000px) ===================== */
+@media (max-width: 1000px) {
+  /* Caja: en una sola columna, primero la venta actual (lector, carrito y
+     cobro) y después el catálogo de productos */
+  .pos-carrito {
+    order: -1;
+  }
+}
+
+/* ===================== TABLET CHICA / CELULAR (≤ 760px) ===================== */
+@media (max-width: 760px) {
+  /* Barras superiores: pasan a varias filas en vez de salirse de la pantalla */
+  .r-topbar {
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    padding: 10px 14px !important;
+  }
+
+  .r-topbar-grupo {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    min-width: 0;
+  }
+
+  .r-topbar h1 {
+    font-size: 1.15rem !important;
+  }
+
+  .r-topbar-usuario {
+    padding: 6px 12px !important;
+    gap: 10px !important;
+  }
+
+  /* Encabezados de tarjeta (título + "Volver al panel") */
+  .r-encabezado {
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+  }
+
+  .r-pagina {
+    padding: 16px 10px !important;
+  }
+
+  .r-card {
+    padding: 18px 14px !important;
+  }
+
+  /* Buscadores con ancho mínimo fijo */
+  .r-input-ancho {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
+  }
+
+  /* Filas de lista con texto + precio/insignias: bajan a dos renglones */
+  .r-fila-lista {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .r-solo-desktop {
+    display: none !important;
+  }
+
+  /* Caja (POS) */
+  .pos-header {
+    position: static !important;
+  }
+
+  .caja-contenido {
+    padding: 14px 10px !important;
+    gap: 14px !important;
+  }
+
+  .caja-contenido > .card {
+    padding: 16px !important;
+  }
+}
+
+/* ===================== CELULAR (≤ 480px) ===================== */
+@media (max-width: 480px) {
+  .r-topbar-grupo-acciones {
+    width: 100%;
+    justify-content: space-between !important;
+  }
+
+  .pos-btn-cerrar {
+    padding: 8px 12px !important;
+    font-size: 0.82em !important;
+  }
+
+  .r-boton-volver {
+    padding: 8px 12px !important;
+    font-size: 0.85em !important;
+  }
+
+  .r-titulo-pagina {
+    font-size: 1.25rem !important;
+  }
+}
+
+/* Filas de lista: el nombre ocupa todo el ancho y precio/insignias bajan */
+@media (max-width: 760px) {
+  .r-fila-lista > :first-child {
+    flex: 1 1 100% !important;
+  }
+}
+
+/* Modal de clientes: margen en celular y desplazamiento si no entra */
+@media (max-width: 760px) {
+  .modal-overlay {
+    padding: 16px;
+    overflow-y: auto;
+  }
+
+  .modal-content {
+    padding: 20px 16px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+  }
+}

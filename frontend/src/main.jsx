@@ -8,6 +8,7 @@ import { BrowserRouter } from "react-router-dom";
 
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
+import "./styles/responsive.css";
 // https://react.dev/reference/react-dom/client/createRoot
 // https://reactrouter.com/api/declarative-router/BrowserRouter
 // StrictMode durante el desarrollo

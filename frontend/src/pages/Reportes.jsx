@@ -225,7 +225,7 @@ export default function Reportes() {
   return (
     <div style={{ backgroundColor: "#f4f6f8", minHeight: "100vh" }}>
       {/* Header Corporativo */}
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px 30px", backgroundColor: "#261d60", color: "white" }}>
+      <header className="r-topbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px 30px", backgroundColor: "#261d60", color: "white" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
           <div style={{ backgroundColor: "rgba(255, 255, 255, 0.1)", padding: "10px", borderRadius: "8px", display: "flex" }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -245,10 +245,10 @@ export default function Reportes() {
         </Link>
       </header>
 
-      <main style={{ padding: "35px 25px", maxWidth: "1200px", margin: "0 auto" }}>
+      <main className="r-pagina" style={{ padding: "35px 25px", maxWidth: "1200px", margin: "0 auto" }}>
         
         {/* Banner Métrico */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "20px", marginBottom: "30px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))", gap: "20px", marginBottom: "30px" }}>
           <div style={{ backgroundColor: "white", padding: "20px", borderRadius: "12px", border: "1px solid #eef0f2", boxShadow: "0 4px 15px rgba(0,0,0,0.03)" }}>
             <span style={{ color: "#7f8c8d", fontSize: "0.85em", fontWeight: "bold", letterSpacing: "0.5px" }}>PRODUCTO ESTRELLA</span>
             <h3 style={{ margin: "10px 0 0 0", color: "#261d60", fontSize: "1.25em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={topProductos[0]?.nombre}>
@@ -278,7 +278,7 @@ export default function Reportes() {
 
         {/* Sección de Gráficos */}
         {!cargando && topProductos.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "25px", marginBottom: "35px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(360px, 100%), 1fr))", gap: "25px", marginBottom: "35px" }}>
             
             {/* Gráfico 1: Demanda */}
             <div style={{ backgroundColor: "white", padding: "25px", borderRadius: "12px", border: "1px solid #eef0f2", boxShadow: "0 4px 15px rgba(0,0,0,0.03)" }}>
@@ -321,7 +321,7 @@ export default function Reportes() {
             <p style={{ textAlign: "center", color: "#7f8c8d", padding: "30px 0" }}>No se encontraron registros de ventas aún.</p>
           ) : (
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <table className="r-tabla" style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                 <thead>
                   <tr style={{ backgroundColor: "#261d60", color: "white" }}>
                     <th style={{ padding: "14px 16px", borderRadius: "8px 0 0 0", width: "50px" }}>#</th>

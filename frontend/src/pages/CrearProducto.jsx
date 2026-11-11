@@ -41,15 +41,15 @@ export default function CrearProducto() {
   };
 
   return (
-    <div style={styles.pageContainer}>
-      <div style={styles.card}>
+    <div className="r-pagina" style={styles.pageContainer}>
+      <div className="r-card" style={styles.card}>
         {/* ENCABEZADO CON ÍCONO DE VOLVER */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: "20px", borderBottom: "2px solid #f0f0f0", marginBottom: "25px" }}>
+        <div className="r-encabezado" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: "20px", borderBottom: "2px solid #f0f0f0", marginBottom: "25px" }}>
           <h2 style={{ margin: 0, color: "#2c3e50", display: "flex", alignItems: "center", gap: "10px" }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#261d60" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
             Registrar Producto
           </h2>
-          <Link to="/admin" style={styles.actionBtnOutline} onMouseOver={(e) => { e.currentTarget.style.backgroundColor = "#e6e4f4"; }} onMouseOut={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}>
+          <Link to="/admin" className="r-boton-volver" style={styles.actionBtnOutline} onMouseOver={(e) => { e.currentTarget.style.backgroundColor = "#e6e4f4"; }} onMouseOut={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Volver al Panel
           </Link>
