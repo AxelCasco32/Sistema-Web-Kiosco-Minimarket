@@ -1,0 +1,226 @@
+/* Panel de Administración: barra superior + menú lateral + contenido */
+.adm {
+  min-height: 100vh;
+  background-color: #f4f6f8;
+}
+
+.adm-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 300;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 22px;
+  background-color: #261d60;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.adm-marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.2rem;
+}
+
+.adm-marca img {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.adm-etiqueta {
+  font-size: 0.6em;
+  background-color: rgba(255, 255, 255, 0.18);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.adm-usuario {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 6px 14px;
+  border-radius: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.adm-nombre {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.adm-salir {
+  background: transparent;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  opacity: 0.8;
+  padding: 2px 0 2px 12px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.adm-salir:hover {
+  opacity: 1;
+}
+
+.adm-hamburguesa {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #fff;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.adm-cuerpo {
+  display: flex;
+  align-items: flex-start;
+}
+
+/* Menú lateral */
+.adm-menu {
+  position: sticky;
+  top: 60px;
+  width: 240px;
+  flex-shrink: 0;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+  background-color: #ffffff;
+  border-right: 1px solid #e6e8ee;
+  padding: 16px 12px 24px;
+}
+
+.adm-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 14px;
+}
+
+.adm-grupo-titulo {
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  padding: 0 10px 4px;
+}
+
+.adm-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  color: #334155;
+  text-decoration: none;
+  font-size: 0.93em;
+  font-weight: 600;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.adm-item:hover {
+  background-color: #f0edfd;
+  color: #261d60;
+}
+
+.adm-item.activo {
+  background-color: #261d60;
+  color: #fff;
+}
+
+.adm-globito {
+  margin-left: auto;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background-color: #c62828;
+  color: #fff;
+  font-size: 0.78em;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adm-contenido {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Los módulos que ya traían su propio fondo de página ocupan el área */
+.adm-contenido > div {
+  min-height: calc(100vh - 60px) !important;
+}
+
+.adm-fondo {
+  display: none;
+}
+
+/* ---------- Celular / tablet chica: menú desplegable ---------- */
+@media (max-width: 900px) {
+  .adm-hamburguesa {
+    display: inline-flex;
+  }
+
+  .adm-topbar {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .adm-marca {
+    font-size: 1.05rem;
+  }
+
+  .adm-menu {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    bottom: 0;
+    height: auto;
+    z-index: 250;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.12);
+  }
+
+  .adm-menu.abierto {
+    transform: translateX(0);
+  }
+
+  .adm-fondo {
+    display: block;
+    position: fixed;
+    inset: 60px 0 0 0;
+    background-color: rgba(15, 12, 41, 0.45);
+    z-index: 240;
+  }
+}
+
+@media (max-width: 420px) {
+  .adm-nombre {
+    display: none;
+  }
+
+  .adm-salir {
+    border-left: none;
+    padding-left: 0;
+  }
+
+  .adm-marca img {
+    display: none;
+  }
+}
