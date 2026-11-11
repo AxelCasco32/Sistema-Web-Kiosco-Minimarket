@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
-import { Link } from "react-router-dom";
 import "../styles/common.css";
 
 export default function HistorialVentas() {
@@ -36,10 +35,6 @@ export default function HistorialVentas() {
               <p style={{ margin: "5px 0 0 0", color: "#7f8c8d", fontSize: "0.9em" }}>Registro de todas las operaciones realizadas.</p>
             </div>
           </div>
-          <Link to="/admin" className="r-boton-volver" style={styles.actionBtnOutline} onMouseOver={(e) => { e.currentTarget.style.backgroundColor = "#e6e4f4"; }} onMouseOut={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            Volver al Panel
-          </Link>
         </div>
 
         {/* Tabla de ventas */}
