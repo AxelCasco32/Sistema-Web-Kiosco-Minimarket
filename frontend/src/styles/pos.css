@@ -400,3 +400,20 @@
 .productos-grid::-webkit-scrollbar-thumb:hover {
   background: #261d60;
 }
+/* Indicador de atajo de teclado (F2, F4, Esc) en los botones de la caja */
+.tecla-atajo {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid currentColor;
+  font-family: inherit;
+  font-size: 0.7em;
+  font-weight: bold;
+  line-height: 1.4;
+  opacity: 0.75;
+  vertical-align: middle;
+}
+@media (hover: none) {
+  .tecla-atajo { display: none; } /* en celular/tablet no hay teclado de funciones */
+}

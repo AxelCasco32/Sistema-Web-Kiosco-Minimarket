@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
-import { avisoRapido } from "../../utils/alertas";
+import { avisoRapido, alertaAviso } from "../../utils/alertas";
+import { conectarTiempoReal } from "../../services/socket";
 import { STOCK_CRITICO } from "../../utils/stockCritico";
 import iconoMorado from "../../assets/IconoKiosquitoYa_morado.png";
 import "./adminLayout.css";
@@ -85,6 +86,20 @@ export default function AdminLayout() {
     setMenuAbierto(false);
     return () => { activo = false; };
   }, [location.pathname]);
+
+  // Aviso en vivo: si un cajero cierra la caja con faltante, el dueño lo ve
+  // al instante en cualquier módulo del panel (además del mail).
+  useEffect(() => {
+    const socket = conectarTiempoReal();
+    socket.on("cierre:faltante", (d) => {
+      const pesos = (n) => `$${Number(n || 0).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      alertaAviso(
+        `Faltante de ${pesos(d.faltante)} en la caja`,
+        `${d.cajero} cerró el turno #${d.idTurno}: se esperaban ${pesos(d.esperado)} en efectivo y contó ${pesos(d.contado)}. El detalle está en Control > Cierres de caja.`
+      );
+    });
+    return () => socket.disconnect();
+  }, []);
 
   return (
     <div className="adm">
