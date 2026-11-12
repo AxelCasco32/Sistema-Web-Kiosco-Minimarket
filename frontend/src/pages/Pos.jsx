@@ -49,6 +49,8 @@ export default function Pos() {
 
   const [cargando, setCargando] = useState(true);
   const [procesandoCobro, setProcesandoCobro] = useState(false);
+  // Ticket de la última venta cobrada (para imprimirlo cuando se quiera, con F8)
+  const [ultimoTicket, setUltimoTicket] = useState(null);
   const [horaActual, setHoraActual] = useState(new Date());
 
   const navigate = useNavigate();
@@ -331,6 +333,7 @@ export default function Pos() {
       ).then((imprimir) => {
         if (imprimir) imprimirTicket(ticket);
       });
+      setUltimoTicket(ticket);
 
       // Si fue en efectivo, sumamos el neto al cajón físico
       if (medioPago === "efectivo") {
@@ -354,14 +357,15 @@ export default function Pos() {
   };
 
   // Atajos de teclado para cobrar sin usar el mouse:
-  // F2 = cobrar · F4 = pago exacto · Esc = cancelar la venta.
+  // F2 = cobrar · F4 = pago exacto · Esc = cancelar la venta ·
+  // F8 = imprimir el ticket de la última venta.
   // La ref guarda siempre las funciones y el estado del último render.
   const atajos = useRef(null);
-  atajos.current = { cobrar, pagoExacto, cancelarVenta, carrito, medioPago, procesandoCobro, faltaCambioEnCaja, mostrarCierre, mostrarModalCliente };
+  atajos.current = { cobrar, pagoExacto, cancelarVenta, ultimoTicket, carrito, medioPago, procesandoCobro, faltaCambioEnCaja, mostrarCierre, mostrarModalCliente };
 
   useEffect(() => {
     const alPresionar = (e) => {
-      if (!["F2", "F4", "Escape"].includes(e.key)) return;
+      if (!["F2", "F4", "F8", "Escape"].includes(e.key)) return;
       const a = atajos.current;
       // Con un cartel o un modal abierto, las teclas son de ese cartel/modal
       if (document.querySelector(".swal2-container") || a.mostrarCierre || a.mostrarModalCliente) return;
@@ -370,6 +374,8 @@ export default function Pos() {
         if (!a.procesandoCobro && !a.faltaCambioEnCaja) a.cobrar();
       } else if (e.key === "F4") {
         if (a.medioPago === "efectivo" && a.carrito.length > 0) a.pagoExacto();
+      } else if (e.key === "F8") {
+        if (a.ultimoTicket) imprimirTicket(a.ultimoTicket);
       } else if (e.key === "Escape") {
         if (a.carrito.length > 0 && !a.procesandoCobro) a.cancelarVenta();
       }
@@ -832,6 +838,20 @@ export default function Pos() {
               />
             </div>
           </div>
+
+          {ultimoTicket && (
+            <button
+              type="button"
+              className="btn-ultimo-ticket"
+              onClick={() => imprimirTicket(ultimoTicket)}
+              title="Atajo: F8"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
+              Imprimir último ticket
+              {ultimoTicket.idVenta ? ` (N° ${String(ultimoTicket.idVenta).padStart(6, "0")})` : ""}
+              <kbd className="tecla-atajo">F8</kbd>
+            </button>
+          )}
 
           <div
             style={{

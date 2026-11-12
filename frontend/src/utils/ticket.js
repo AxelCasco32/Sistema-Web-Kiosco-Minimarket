@@ -98,10 +98,14 @@ export function imprimirTicket(venta) {
   marco.contentWindow.onafterprint = quitar;
   // Un instante para que el navegador arme la página antes de imprimir
   setTimeout(() => {
+    const foco = document.activeElement;
     try {
       marco.contentWindow.focus();
       marco.contentWindow.print();
     } finally {
+      // Devolvemos el foco a la caja (lector y atajos de teclado)
+      window.focus();
+      if (foco && typeof foco.focus === "function") foco.focus();
       setTimeout(quitar, 60000); // por si el navegador no avisa el fin de la impresión
     }
   }, 150);

@@ -417,3 +417,22 @@
 @media (hover: none) {
   .tecla-atajo { display: none; } /* en celular/tablet no hay teclado de funciones */
 }
+
+/* Botón para imprimir el ticket de la última venta cobrada */
+.btn-ultimo-ticket {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 2px dashed #261d60;
+  background: #f0edfd;
+  color: #261d60;
+  font-weight: bold;
+  font-size: 0.95em;
+  cursor: pointer;
+}
+.btn-ultimo-ticket:hover { background: #e6e4f4; }
