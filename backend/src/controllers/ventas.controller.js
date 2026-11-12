@@ -1,4 +1,4 @@
-const { Producto, Venta, DetalleVenta, TurnoCaja, Usuario, sequelize } = require('../models');
+const { Producto, Venta, DetalleVenta, TurnoCaja, Usuario, Cliente, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { puedeOperarTurno } = require('./turnos.controller');
 const { avisarAdmins } = require('../realtime/socket');
@@ -96,7 +96,14 @@ async function registrarVenta(req, res) {
 
     // 4. Si todo salió bien (Venta, Detalles y Stock), confirmamos los cambios (commit)
     await t.commit();
-    res.status(200).json({ mensaje: "Venta registrada correctamente y stock descontado" });
+    res.status(200).json({
+      mensaje: "Venta registrada correctamente y stock descontado",
+      // Datos para imprimir el ticket
+      idVenta: nuevaVenta.id_Venta,
+      fecha: nuevaVenta.Fecha_Hora,
+      montoRecibido,
+      vuelto,
+    });
 
     // 5. Aviso en tiempo real al panel de Admin (si falla, la venta ya quedó guardada)
     try {
@@ -177,16 +184,28 @@ async function obtenerVentas(req, res) {
 
         detallesConProducto.push({
           cantidad: d.Cantidad || d.cantidad,
+          precio_unitario: Number(d.Precio_unitario || 0),
+          subtotal: Number(d.Subtotal || 0),
           Producto: { Nombre: nombreProd }
         });
       }
 
-      // --- 3. ARMADO FINAL ---
+      // --- 3. CLIENTE (para reimprimir el ticket) ---
+      let cliente = null;
+      if (v.id_cliente) {
+        const clienteBD = await Cliente.findByPk(v.id_cliente);
+        if (clienteBD) cliente = { Nombre: clienteBD.Nombre_razon_social, CUIT: clienteBD.Cuit_DNI };
+      }
+
+      // --- 4. ARMADO FINAL ---
       historialFormateado.push({
         idVenta: idDeVenta,
         fecha: v.Fecha_Hora,
         total: v.Total_Venta,
         metodo_pago: v.Metodo_Pago,
+        monto_recibido: v.Monto,
+        vuelto: v.Vuelto,
+        cliente,
         Cajero: { Nombre: nombreCajero }, // Acá mandamos el nombre real
         Detalles: detallesConProducto
       });
