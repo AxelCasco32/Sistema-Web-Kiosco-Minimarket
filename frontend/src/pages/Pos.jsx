@@ -1,6 +1,6 @@
 // pages/Pos.jsx
 import { useAuth } from "../context/AuthContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "../styles/common.css";
 import "../styles/pos.css";
 import api, { obtenerProductos } from "../services/api";
@@ -219,6 +219,23 @@ export default function Pos() {
     setEfectivoRecibido(String(total));
   };
 
+  const cancelarVenta = async () => {
+    const ok = await confirmar({
+      titulo: "¿Cancelar esta venta?",
+      texto: "Se vacía el carrito y se descartan los datos de pago.",
+      textoConfirmar: "Sí, cancelar venta",
+      textoCancelar: "Volver",
+      peligro: true,
+      icono: "warning",
+    });
+    if (ok) {
+      setCarrito([]);
+      setEfectivoRecibido("");
+      setNumeroComprobante("");
+      setClienteSeleccionado(null);
+    }
+  };
+
   const cobrar = async () => {
     if (carrito.length === 0) {
       alertaAviso("Carrito vacío", "No hay productos en la venta.");
@@ -319,6 +336,31 @@ export default function Pos() {
       setProcesandoCobro(false);
     }
   };
+
+  // Atajos de teclado para cobrar sin usar el mouse:
+  // F2 = cobrar · F4 = pago exacto · Esc = cancelar la venta.
+  // La ref guarda siempre las funciones y el estado del último render.
+  const atajos = useRef(null);
+  atajos.current = { cobrar, pagoExacto, cancelarVenta, carrito, medioPago, procesandoCobro, faltaCambioEnCaja, mostrarCierre, mostrarModalCliente };
+
+  useEffect(() => {
+    const alPresionar = (e) => {
+      if (!["F2", "F4", "Escape"].includes(e.key)) return;
+      const a = atajos.current;
+      // Con un cartel o un modal abierto, las teclas son de ese cartel/modal
+      if (document.querySelector(".swal2-container") || a.mostrarCierre || a.mostrarModalCliente) return;
+      e.preventDefault();
+      if (e.key === "F2") {
+        if (!a.procesandoCobro && !a.faltaCambioEnCaja) a.cobrar();
+      } else if (e.key === "F4") {
+        if (a.medioPago === "efectivo" && a.carrito.length > 0) a.pagoExacto();
+      } else if (e.key === "Escape") {
+        if (a.carrito.length > 0 && !a.procesandoCobro) a.cancelarVenta();
+      }
+    };
+    window.addEventListener("keydown", alPresionar);
+    return () => window.removeEventListener("keydown", alPresionar);
+  }, []);
 
   return (
     <div className="caja">
@@ -1027,8 +1069,8 @@ export default function Pos() {
               />
 
               <div className="grilla-billetes">
-                <button type="button" className="btn-exacto" onClick={pagoExacto}>
-                  Exacto
+                <button type="button" className="btn-exacto" onClick={pagoExacto} title="Atajo: F4">
+                  Exacto <kbd className="tecla-atajo">F4</kbd>
                 </button>
                 <button type="button" className="btn-billete" onClick={() => agregarBillete(50)}>$50</button>
                 <button type="button" className="btn-billete" onClick={() => agregarBillete(100)}>$100</button>
@@ -1223,22 +1265,8 @@ export default function Pos() {
           <div style={{ display: "flex", gap: "15px" }}>
             <button
               className="btn-cancelar"
-              onClick={async () => {
-                const ok = await confirmar({
-                  titulo: "¿Cancelar esta venta?",
-                  texto: "Se vacía el carrito y se descartan los datos de pago.",
-                  textoConfirmar: "Sí, cancelar venta",
-                  textoCancelar: "Volver",
-                  peligro: true,
-                  icono: "warning",
-                });
-                if (ok) {
-                  setCarrito([]);
-                  setEfectivoRecibido("");
-                  setNumeroComprobante("");
-                  setClienteSeleccionado(null);
-                }
-              }}
+              onClick={cancelarVenta}
+              title="Atajo: Esc"
               disabled={procesandoCobro}
               style={{
                 flex: 1,
@@ -1261,11 +1289,12 @@ export default function Pos() {
                 e.currentTarget.style.color = "#757575";
               }}
             >
-              Cancelar
+              Cancelar <kbd className="tecla-atajo">Esc</kbd>
             </button>
             <button
               className="btn-cobrar"
               onClick={cobrar}
+              title="Atajo: F2"
               disabled={procesandoCobro || faltaCambioEnCaja}
               style={{
                 flex: 2,
@@ -1297,7 +1326,7 @@ export default function Pos() {
                 ? "Procesando..."
                 : faltaCambioEnCaja
                 ? "SIN CAMBIO SUFICIENTE"
-                : "COBRAR"}
+                : <>COBRAR <kbd className="tecla-atajo">F2</kbd></>}
             </button>
           </div>
         </section>
