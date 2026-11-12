@@ -71,6 +71,25 @@ export async function confirmar({
   return resultado.isConfirmed;
 }
 
+// Venta cobrada: muestra el resumen y ofrece imprimir el ticket.
+// Devuelve true si el cajero eligió "Imprimir ticket". El foco queda en
+// "Listo" para que Enter o Esc sigan atendiendo sin imprimir.
+export async function ventaRegistrada(texto) {
+  const resultado = await Swal.fire({
+    ...base,
+    icon: "success",
+    title: "¡Venta registrada!",
+    html: aHtml(texto),
+    showCancelButton: true,
+    confirmButtonText: "Imprimir ticket",
+    cancelButtonText: "Listo",
+    cancelButtonColor: COLOR_CANCELAR,
+    reverseButtons: true,
+    focusCancel: true,
+  });
+  return resultado.isConfirmed;
+}
+
 const toast = Swal.mixin({
   toast: true,
   position: "top-end",

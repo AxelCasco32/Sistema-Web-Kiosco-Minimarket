@@ -1,6 +1,26 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
+import { imprimirTicket } from "../utils/ticket";
 import "../styles/common.css";
+
+// Reimprime el ticket de una venta del historial
+function reimprimir(venta) {
+  imprimirTicket({
+    idVenta: venta.idVenta,
+    fecha: venta.fecha,
+    cajero: venta.Cajero?.Nombre,
+    cliente: venta.cliente,
+    items: (venta.Detalles || []).map((d) => ({
+      nombre: d.Producto?.Nombre,
+      cantidad: d.cantidad,
+      precio: d.precio_unitario ?? (Number(d.subtotal) / Number(d.cantidad || 1)),
+    })),
+    total: venta.total,
+    medioPago: venta.metodo_pago,
+    montoRecibido: venta.monto_recibido,
+    vuelto: venta.vuelto,
+  });
+}
 
 export default function HistorialVentas() {
   const [ventas, setVentas] = useState([]);
@@ -47,12 +67,13 @@ export default function HistorialVentas() {
                 <th style={{ padding: "15px", fontWeight: "normal", letterSpacing: "0.5px", fontSize: "0.95em" }}>Método de Pago</th>
                 <th style={{ padding: "15px", fontWeight: "normal", letterSpacing: "0.5px", fontSize: "0.95em" }}>Total</th>
                 <th style={{ padding: "15px", fontWeight: "normal", letterSpacing: "0.5px", fontSize: "0.95em" }}>Detalle</th>
+                <th style={{ padding: "15px", fontWeight: "normal", letterSpacing: "0.5px", fontSize: "0.95em", textAlign: "center" }}>Ticket</th>
               </tr>
             </thead>
             <tbody>
               {cargando ? (
                 <tr>
-                  <td colSpan="5" style={{ padding: "40px", textAlign: "center", color: "#7f8c8d" }}>
+                  <td colSpan="6" style={{ padding: "40px", textAlign: "center", color: "#7f8c8d" }}>
                     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}>
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spin"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
                       Cargando historial...
@@ -61,7 +82,7 @@ export default function HistorialVentas() {
                 </tr>
               ) : ventas.length === 0 ? (
                 <tr>
-                  <td colSpan="5" style={{ padding: "50px 20px", textAlign: "center" }}>
+                  <td colSpan="6" style={{ padding: "50px 20px", textAlign: "center" }}>
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#dcdde1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: "15px" }}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
                     <p style={{ margin: 0, color: "#95a5a6", fontSize: "1.1em", fontWeight: "bold" }}>No hay ventas registradas.</p>
                   </td>
@@ -84,6 +105,17 @@ export default function HistorialVentas() {
                     <td style={{ padding: "14px 15px", fontWeight: "bold", color: "#261d60", fontSize: "1.05em" }}>${venta.total}</td>
                     <td style={{ padding: "14px 15px", fontSize: "0.9em", color: "#555" }}>
                       {venta.Detalles?.map(d => `${d.cantidad}x ${d.Producto?.Nombre}`).join(", ") || 'Ver detalle...'}
+                    </td>
+                    <td style={{ padding: "14px 15px", textAlign: "center" }}>
+                      <button
+                        type="button"
+                        onClick={() => reimprimir(venta)}
+                        title="Reimprimir el ticket de esta venta"
+                        style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", borderRadius: "8px", border: "1px solid #261d60", backgroundColor: "white", color: "#261d60", fontWeight: "bold", fontSize: "0.85em", cursor: "pointer", whiteSpace: "nowrap" }}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
+                        Imprimir
+                      </button>
                     </td>
                   </tr>
                 ))

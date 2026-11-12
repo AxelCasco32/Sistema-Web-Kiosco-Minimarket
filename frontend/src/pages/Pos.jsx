@@ -7,7 +7,8 @@ import api, { obtenerProductos } from "../services/api";
 import BuscarClienteModal from "../components/BuscarClienteModal";
 import { useNavigate } from "react-router-dom";
 import CierreCajaModal from "../components/CierreCajaModal";
-import { alertaExito, alertaError, alertaAviso, confirmar, avisoRapido, mensajeDeError } from "../utils/alertas";
+import { alertaError, alertaAviso, confirmar, avisoRapido, mensajeDeError, ventaRegistrada } from "../utils/alertas";
+import { imprimirTicket } from "../utils/ticket";
 import { STOCK_CRITICO } from "../utils/stockCritico";
 
 // Isotipos oficiales de KiosquitoYa
@@ -296,8 +297,22 @@ export default function Pos() {
         detalle: detalleVenta,
       };
 
-      await api.post("/ventas", datosVenta);
+      const { data: ventaGuardada } = await api.post("/ventas", datosVenta);
       const vueltoEntregado = medioPago === "efectivo" ? Math.max(vuelto, 0) : 0;
+
+      // Datos del ticket (se toman antes de vaciar el carrito)
+      const ticket = {
+        idVenta: ventaGuardada?.idVenta,
+        fecha: ventaGuardada?.fecha || new Date(),
+        cajero: `${usuario?.nombre || ""} ${usuario?.apellido || ""}`.trim(),
+        cliente: clienteSeleccionado ? { Nombre: clienteSeleccionado.Nombre, CUIT: clienteSeleccionado.CUIT } : null,
+        items: carrito.map((p) => ({ nombre: p.Nombre, cantidad: p.cantidad, precio: p.Precio_Venta })),
+        total,
+        medioPago,
+        montoRecibido: medioPago === "efectivo" ? valorRecibidoNum : null,
+        vuelto: medioPago === "efectivo" ? vueltoEntregado : null,
+        comprobante: numeroComprobante,
+      };
 
       // Alerta: productos que con esta venta quedaron en stock crítico
       const quedanPocos = carrito
@@ -309,12 +324,13 @@ export default function Pos() {
           `.\nAvisale al administrador para reponer.`
         : "";
 
-      alertaExito(
-        "¡Venta registrada!",
+      ventaRegistrada(
         `Total cobrado: $${total.toFixed(2)}` +
           (vueltoEntregado > 0 ? `\nVuelto a entregar: $${vueltoEntregado.toFixed(2)}` : "") +
           avisoStock
-      );
+      ).then((imprimir) => {
+        if (imprimir) imprimirTicket(ticket);
+      });
 
       // Si fue en efectivo, sumamos el neto al cajón físico
       if (medioPago === "efectivo") {
